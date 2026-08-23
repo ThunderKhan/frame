@@ -31,8 +31,6 @@ def inject_device_farm(
     shared_device_id = f"fraud_device_{ring_id}"
     shared_ip_id = f"fraud_ip_{ring_id}"
 
-    starting_index = len(output)
-
     for account_index in range(1, ring_size + 1):
         customer_id = f"fraud_customer_{ring_id}_{account_index:03d}"
         card_id = f"fraud_card_{ring_id}_{account_index:03d}"
