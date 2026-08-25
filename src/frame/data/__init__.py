@@ -1,4 +1,7 @@
-from frame.data.fraud import inject_device_farm
+from frame.data.fraud import (
+    inject_device_farm,
+    inject_multiple_device_farms,
+)
 from frame.data.generator import (
     generate_customer_profiles,
     generate_legitimate_transactions,
@@ -13,5 +16,6 @@ __all__ = [
     "generate_customer_profiles",
     "generate_legitimate_transactions",
     "inject_device_farm",
+    "inject_multiple_device_farms",
     "validate_dataset",
 ]

@@ -1,6 +1,9 @@
 import pytest
 
-from frame.data.fraud import inject_device_farm
+from frame.data.fraud import (
+    inject_device_farm,
+    inject_multiple_device_farms,
+)
 from frame.data.generator import generate_legitimate_transactions
 
 
@@ -154,3 +157,88 @@ def test_device_farm_requires_multiple_accounts() -> None:
             legitimate,
             ring_size=1,
         )
+
+def test_multiple_device_farms_create_expected_rings() -> None:
+    legitimate = generate_legitimate_transactions(
+        count=100,
+        seed=42,
+    )
+
+    transactions = inject_multiple_device_farms(
+        legitimate,
+        ring_count=3,
+        ring_size=4,
+        transactions_per_account=2,
+        seed=42,
+    )
+
+    fraud_transactions = [
+        transaction
+        for transaction in transactions
+        if transaction.is_fraud
+    ]
+
+    ring_ids = {
+        transaction.fraud_ring_id
+        for transaction in fraud_transactions
+    }
+
+    assert ring_ids == {
+        "ring_001",
+        "ring_002",
+        "ring_003",
+    }
+
+
+def test_fraud_account_ages_overlap_legitimate_range() -> None:
+    legitimate = generate_legitimate_transactions(
+        count=100,
+        seed=42,
+    )
+
+    transactions = inject_device_farm(
+        legitimate,
+        ring_id="ring_age",
+        ring_size=10,
+        transactions_per_account=1,
+        seed=42,
+    )
+
+    injected = transactions[
+        len(legitimate):
+    ]
+
+    assert all(
+        30
+        <= transaction.account_age_days
+        <= 1500
+        for transaction in injected
+    )
+
+
+def test_partial_shared_structure_is_supported() -> None:
+    legitimate = generate_legitimate_transactions(
+        count=100,
+        seed=42,
+    )
+
+    transactions = inject_device_farm(
+        legitimate,
+        ring_id="ring_partial",
+        ring_size=20,
+        transactions_per_account=1,
+        seed=42,
+        shared_device_ratio=0.5,
+        shared_ip_ratio=0.5,
+    )
+
+    injected = transactions[
+        len(legitimate):
+    ]
+
+    device_ids = {
+        transaction.device_id
+        for transaction in injected
+    }
+
+    assert len(device_ids) > 1
