@@ -6,6 +6,7 @@ from sklearn.linear_model import LogisticRegression
 
 from frame.domain.transaction import Transaction
 from frame.graph.features import extract_graph_features
+from frame.graph.temporal import build_temporal_features
 from frame.risk.baseline import build_labels
 
 HYBRID_FEATURE_NAMES = [
@@ -17,8 +18,13 @@ HYBRID_FEATURE_NAMES = [
     "ip_degree",
     "merchant_degree",
     "component_size",
+    "device_transactions_30m",
+    "ip_transactions_30m",
+    "customer_transactions_30m",
+    "device_customers_30m",
+    "ip_customers_30m",
+    "device_merchants_30m",
 ]
-
 
 def hybrid_feature_vector(
     transaction: Transaction,
@@ -45,17 +51,45 @@ def build_hybrid_feature_matrix(
     transactions: list[Transaction],
     graph: nx.Graph,
 ) -> np.ndarray:
-    return np.asarray(
-        [
-            hybrid_feature_vector(
-                transaction,
-                graph,
-            )
-            for transaction in transactions
-        ],
-        dtype=float,
+    temporal_features = build_temporal_features(
+        transactions
     )
 
+    rows: list[list[float]] = []
+
+    for transaction in transactions:
+        graph_features = extract_graph_features(
+            transaction,
+            graph,
+        )
+
+        temporal = temporal_features[
+            transaction.transaction_id
+        ]
+
+        rows.append(
+            [
+                transaction.amount,
+                float(transaction.account_age_days),
+                graph_features["customer_degree"],
+                graph_features["card_degree"],
+                graph_features["device_degree"],
+                graph_features["ip_degree"],
+                graph_features["merchant_degree"],
+                graph_features["component_size"],
+                temporal["device_transactions_30m"],
+                temporal["ip_transactions_30m"],
+                temporal["customer_transactions_30m"],
+                temporal["device_customers_30m"],
+                temporal["ip_customers_30m"],
+                temporal["device_merchants_30m"],
+            ]
+        )
+
+    return np.asarray(
+        rows,
+        dtype=float,
+    )
 
 def train_hybrid_model(
     transactions: list[Transaction],

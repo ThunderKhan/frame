@@ -36,7 +36,7 @@ def test_hybrid_feature_matrix_shape() -> None:
 
     assert matrix.shape == (
         len(transactions),
-        8,
+        14,
     )
 
 
