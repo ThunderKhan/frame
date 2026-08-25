@@ -17,6 +17,7 @@ from frame.graph.builder import (
 )
 from frame.graph.online import (
     extract_online_graph_features,
+    has_cross_customer_graph_evidence,
 )
 from frame.graph.temporal_online import (
     OnlineTemporalState,
@@ -25,6 +26,49 @@ from frame.risk.baseline import (
     build_labels,
 )
 
+
+def build_online_graph_evidence_mask(
+    transactions: list[Transaction],
+) -> np.ndarray:
+    ordered = sorted(
+        transactions,
+        key=lambda transaction: (
+            transaction.timestamp,
+            transaction.transaction_id,
+        ),
+    )
+
+    graph = nx.Graph()
+
+    evidence_by_id: dict[
+        str,
+        bool,
+    ] = {}
+
+    for transaction in ordered:
+        evidence_by_id[
+            transaction.transaction_id
+        ] = (
+            has_cross_customer_graph_evidence(
+                transaction,
+                graph,
+            )
+        )
+
+        add_transaction_to_graph(
+            graph,
+            transaction,
+        )
+
+    return np.asarray(
+        [
+            evidence_by_id[
+                transaction.transaction_id
+            ]
+            for transaction in transactions
+        ],
+        dtype=bool,
+    )
 
 def build_online_feature_matrix(
     transactions: list[Transaction],

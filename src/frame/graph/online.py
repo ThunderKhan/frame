@@ -38,6 +38,34 @@ def _component_exposure(
         len(exposed_nodes)
     )
 
+def has_cross_customer_graph_evidence(
+    transaction: Transaction,
+    graph: nx.Graph,
+) -> bool:
+    current_customer = (
+        f"customer:{transaction.customer_id}"
+    )
+
+    entity_nodes = [
+        f"device:{transaction.device_id}",
+        f"ip:{transaction.ip_id}",
+    ]
+
+    for entity_node in entity_nodes:
+        if entity_node not in graph:
+            continue
+
+        for neighbor in graph.neighbors(
+            entity_node
+        ):
+            if (
+                neighbor.startswith("customer:")
+                and neighbor
+                != current_customer
+            ):
+                return True
+
+    return False
 
 def extract_online_graph_features(
     transaction: Transaction,
