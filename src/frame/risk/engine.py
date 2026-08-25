@@ -21,6 +21,9 @@ from frame.graph.temporal_online import (
 from frame.risk.evidence import (
     build_risk_evidence,
 )
+from frame.risk.online import (
+    build_online_feature_row,
+)
 from frame.risk.policy import (
     RiskPolicy,
 )
@@ -66,48 +69,11 @@ class RiskEngine:
 
         feature_vector = np.asarray(
             [
-                [
-                    transaction.amount,
-                    float(
-                        transaction.account_age_days
-                    ),
-                    graph_features[
-                        "customer_degree"
-                    ],
-                    graph_features[
-                        "card_degree"
-                    ],
-                    graph_features[
-                        "device_degree"
-                    ],
-                    graph_features[
-                        "ip_degree"
-                    ],
-                    graph_features[
-                        "merchant_degree"
-                    ],
-                    graph_features[
-                        "component_size"
-                    ],
-                    temporal_features[
-                        "device_transactions_30m"
-                    ],
-                    temporal_features[
-                        "ip_transactions_30m"
-                    ],
-                    temporal_features[
-                        "customer_transactions_30m"
-                    ],
-                    temporal_features[
-                        "device_customers_30m"
-                    ],
-                    temporal_features[
-                        "ip_customers_30m"
-                    ],
-                    temporal_features[
-                        "device_merchants_30m"
-                    ],
-                ]
+                build_online_feature_row(
+                    transaction,
+                    graph_features,
+                    temporal_features,
+                )
             ],
             dtype=float,
         )

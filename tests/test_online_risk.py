@@ -2,6 +2,7 @@ from frame.evaluation.worlds import (
     build_synthetic_world,
 )
 from frame.risk.online import (
+    ONLINE_FEATURE_NAMES,
     build_online_feature_matrix,
 )
 
@@ -21,5 +22,5 @@ def test_online_feature_matrix_shape() -> None:
 
     assert matrix.shape == (
         len(world.transactions),
-        14,
+        len(ONLINE_FEATURE_NAMES),
     )

@@ -28,6 +28,66 @@ from frame.risk.baseline import (
     build_labels,
 )
 
+ONLINE_FEATURE_NAMES = [
+    "amount",
+    "account_age_days",
+    "customer_degree",
+    "card_degree",
+    "device_degree",
+    "merchant_degree",
+    "component_size",
+    "device_transactions_30m",
+    "ip_transactions_30m",
+    "customer_transactions_30m",
+    "device_customers_30m",
+    "ip_customers_30m",
+    "device_merchants_30m",
+]
+
+def build_online_feature_row(
+    transaction: Transaction,
+    graph_features: dict[str, float],
+    temporal_features: dict[str, float],
+) -> list[float]:
+    return [
+        transaction.amount,
+        float(
+            transaction.account_age_days
+        ),
+        graph_features[
+            "customer_degree"
+        ],
+        graph_features[
+            "card_degree"
+        ],
+        graph_features[
+            "device_degree"
+        ],
+        graph_features[
+            "merchant_degree"
+        ],
+        graph_features[
+            "component_size"
+        ],
+        temporal_features[
+            "device_transactions_30m"
+        ],
+        temporal_features[
+            "ip_transactions_30m"
+        ],
+        temporal_features[
+            "customer_transactions_30m"
+        ],
+        temporal_features[
+            "device_customers_30m"
+        ],
+        temporal_features[
+            "ip_customers_30m"
+        ],
+        temporal_features[
+            "device_merchants_30m"
+        ],
+    ]
 
 def build_online_graph_evidence_mask(
     transactions: list[Transaction],
@@ -107,49 +167,12 @@ def build_online_feature_matrix(
             )
         )
 
-        row = [
-            transaction.amount,
-            float(
-                transaction.account_age_days
-            ),
-            graph_features[
-                "customer_degree"
-            ],
-            graph_features[
-                "card_degree"
-            ],
-            graph_features[
-                "device_degree"
-            ],
-            graph_features[
-                "ip_degree"
-            ],
-            graph_features[
-                "merchant_degree"
-            ],
-            graph_features[
-                "component_size"
-            ],
-            temporal[
-                "device_transactions_30m"
-            ],
-            temporal[
-                "ip_transactions_30m"
-            ],
-            temporal[
-                "customer_transactions_30m"
-            ],
-            temporal[
-                "device_customers_30m"
-            ],
-            temporal[
-                "ip_customers_30m"
-            ],
-            temporal[
-                "device_merchants_30m"
-            ],
-        ]
-
+        row = build_online_feature_row(
+            transaction,
+            graph_features,
+            temporal,
+        )
+        
         rows_by_id[
             transaction.transaction_id
         ] = row
