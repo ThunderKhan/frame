@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+
 from frame.evaluation.metrics import (
     EvaluationMetrics,
     evaluate_predictions,
@@ -27,6 +29,10 @@ from frame.risk.hybrid import (
 class IndependentComparison:
     baseline: EvaluationMetrics
     hybrid: EvaluationMetrics
+
+    test_labels: np.ndarray
+    baseline_probabilities: np.ndarray
+    hybrid_probabilities: np.ndarray
 
 
 def evaluate_independent_worlds(
@@ -120,4 +126,11 @@ def evaluate_independent_worlds(
     return IndependentComparison(
         baseline=baseline_metrics,
         hybrid=hybrid_metrics,
+        test_labels=test_labels,
+        baseline_probabilities=(
+            baseline_probabilities
+        ),
+        hybrid_probabilities=(
+            hybrid_probabilities
+        ),
     )
