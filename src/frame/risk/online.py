@@ -8,6 +8,8 @@ from sklearn.calibration import (
 from sklearn.linear_model import (
     LogisticRegression,
 )
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from frame.domain.transaction import (
     Transaction,
@@ -181,10 +183,21 @@ def train_online_hybrid_model(
         transactions
     )
 
-    base_model = LogisticRegression(
-        max_iter=2000,
-        class_weight="balanced",
-        random_state=42,
+    base_model = Pipeline(
+        steps=[
+            (
+                "scaler",
+                StandardScaler(),
+            ),
+            (
+                "classifier",
+                LogisticRegression(
+                    max_iter=2000,
+                    class_weight="balanced",
+                    random_state=42,
+                ),
+            ),
+        ]
     )
 
     model = CalibratedClassifierCV(
