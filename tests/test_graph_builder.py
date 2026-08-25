@@ -1,7 +1,46 @@
+from datetime import UTC, datetime
+
 from frame.data.fraud import inject_device_farm
 from frame.data.generator import generate_legitimate_transactions
+from frame.domain.transaction import Transaction
 from frame.graph.builder import build_payment_graph
 
+
+def test_add_transaction_to_existing_graph() -> None:
+    import networkx as nx
+
+    from frame.graph.builder import (
+        add_transaction_to_graph,
+    )
+
+    transaction = Transaction(
+        transaction_id="txn_001",
+        customer_id="cust_001",
+        merchant_id="merchant_001",
+        device_id="device_001",
+        card_id="card_001",
+        ip_id="ip_001",
+        amount=500.0,
+        timestamp=datetime.now(UTC),
+        account_age_days=200,
+    )
+
+    graph = nx.Graph()
+
+    add_transaction_to_graph(
+        graph,
+        transaction,
+    )
+
+    assert (
+        f"customer:{transaction.customer_id}"
+        in graph
+    )
+
+    assert (
+        f"device:{transaction.device_id}"
+        in graph
+    )
 
 def test_graph_contains_expected_node_types() -> None:
     transactions = generate_legitimate_transactions(
