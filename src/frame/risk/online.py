@@ -18,8 +18,8 @@ from frame.graph.builder import (
 from frame.graph.online import (
     extract_online_graph_features,
 )
-from frame.graph.temporal import (
-    build_temporal_features,
+from frame.graph.temporal_online import (
+    OnlineTemporalState,
 )
 from frame.risk.baseline import (
     build_labels,
@@ -38,7 +38,9 @@ def build_online_feature_matrix(
     )
 
     graph = nx.Graph()
-    history: list[Transaction] = []
+    temporal_state = OnlineTemporalState(
+        window_minutes=30
+    )
 
     rows_by_id: dict[
         str,
@@ -53,9 +55,11 @@ def build_online_feature_matrix(
             )
         )
 
-        temporal = build_temporal_features(
-            history + [transaction]
-        )[transaction.transaction_id]
+        temporal = (
+            temporal_state.extract_and_update(
+                transaction
+            )
+        )
 
         row = [
             transaction.amount,
@@ -108,8 +112,6 @@ def build_online_feature_matrix(
             graph,
             transaction,
         )
-
-        history.append(transaction)
 
     return np.asarray(
         [
