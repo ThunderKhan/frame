@@ -34,9 +34,45 @@ def inject_device_farm(
 
     output = list(transactions)
 
-    start_time = max(
+    min_time = min(
         transaction.timestamp
         for transaction in transactions
+    )
+
+    max_time = max(
+        transaction.timestamp
+        for transaction in transactions
+    )
+
+    fraud_window_minutes = 180
+
+    latest_start_time = (
+        max_time
+        - timedelta(
+            minutes=fraud_window_minutes
+        )
+    )
+
+    latest_start_time = max(latest_start_time, min_time)
+
+    available_seconds = int(
+        (
+            latest_start_time
+            - min_time
+        ).total_seconds()
+    )
+
+    start_time = (
+        min_time
+        + timedelta(
+            seconds=rng.randint(
+                0,
+                max(
+                    available_seconds,
+                    0,
+                ),
+            )
+        )
     )
 
     shared_device_id = f"fraud_device_{ring_id}"

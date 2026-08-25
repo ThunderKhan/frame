@@ -7,6 +7,44 @@ from frame.data.fraud import (
 from frame.data.generator import generate_legitimate_transactions
 
 
+def test_device_farm_is_injected_inside_existing_timeline() -> None:
+    transactions = generate_legitimate_transactions(
+        count=500,
+        seed=42,
+    )
+
+    original_min = min(
+        transaction.timestamp
+        for transaction in transactions
+    )
+
+    original_max = max(
+        transaction.timestamp
+        for transaction in transactions
+    )
+
+    output = inject_device_farm(
+        transactions,
+        ring_size=4,
+        transactions_per_account=2,
+        seed=123,
+    )
+
+    fraud_transactions = [
+        transaction
+        for transaction in output
+        if transaction.is_fraud
+    ]
+
+    assert fraud_transactions
+
+    assert all(
+        original_min
+        <= transaction.timestamp
+        <= original_max
+        for transaction in fraud_transactions
+    )
+
 def test_device_farm_adds_expected_number_of_transactions() -> None:
     legitimate = generate_legitimate_transactions(
         count=100,

@@ -7,7 +7,6 @@ from frame.risk.online import (
     train_online_hybrid_model,
 )
 
-
 FEATURE_NAMES = [
     "amount",
     "account_age_days",
