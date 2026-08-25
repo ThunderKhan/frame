@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import networkx as nx
 import numpy as np
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
 
 from frame.domain.transaction import Transaction
@@ -94,7 +95,7 @@ def build_hybrid_feature_matrix(
 def train_hybrid_model(
     transactions: list[Transaction],
     graph: nx.Graph,
-) -> LogisticRegression:
+) -> CalibratedClassifierCV:
     features = build_hybrid_feature_matrix(
         transactions,
         graph,
@@ -104,10 +105,16 @@ def train_hybrid_model(
         transactions,
     )
 
-    model = LogisticRegression(
+    base_model = LogisticRegression(
         max_iter=2000,
         class_weight="balanced",
         random_state=42,
+    )
+
+    model = CalibratedClassifierCV(
+        estimator=base_model,
+        method="sigmoid",
+        cv=5,
     )
 
     model.fit(
