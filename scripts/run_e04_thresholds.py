@@ -20,6 +20,18 @@ def main() -> None:
         seed=42,
     )
 
+    validation_world = build_hard_negative_world(
+        legitimate_count=5_000,
+        ring_count=3,
+        ring_size=8,
+        transactions_per_account=4,
+        seed=7331,
+        shared_ip_group_count=10,
+        shared_ip_customers_per_group=8,
+        shared_device_group_count=8,
+        shared_device_customers_per_group=3,
+    )
+
     test_world = build_hard_negative_world(
         legitimate_count=5_000,
         ring_count=3,
@@ -32,9 +44,9 @@ def main() -> None:
         shared_device_customers_per_group=3,
     )
 
-    result = evaluate_independent_worlds(
+    validation_result = evaluate_independent_worlds(
         train_world,
-        test_world,
+        validation_world,
     )
 
     cost_model = CostModel(
@@ -42,26 +54,34 @@ def main() -> None:
         false_negative_cost=1000.0,
     )
 
-    sweep = sweep_thresholds(
-        result.test_labels,
-        result.hybrid_probabilities,
+    thresholds = [
+        0.50,
+        0.60,
+        0.70,
+        0.80,
+        0.85,
+        0.90,
+        0.92,
+        0.94,
+        0.95,
+        0.96,
+        0.97,
+        0.98,
+        0.985,
+        0.99,
+        0.995,
+        0.999,
+    ]
+
+    validation_sweep = sweep_thresholds(
+        validation_result.test_labels,
+        validation_result.hybrid_probabilities,
         cost_model,
-        thresholds=[
-            0.50,
-            0.55,
-            0.60,
-            0.65,
-            0.70,
-            0.75,
-            0.80,
-            0.85,
-            0.90,
-            0.95,
-        ],
+        thresholds=thresholds,
     )
 
-    print("FRAME E04 — Threshold Sweep")
-    print("=" * 72)
+    print("FRAME E04 — VALIDATION THRESHOLD SWEEP")
+    print("=" * 78)
 
     print(
         f"{'Threshold':<12}"
@@ -73,9 +93,9 @@ def main() -> None:
         f"{'Cost':<12}"
     )
 
-    for point in sweep:
+    for point in validation_sweep:
         print(
-            f"{point.threshold:<12.2f}"
+            f"{point.threshold:<12.3f}"
             f"{point.precision:<12.4f}"
             f"{point.recall:<12.4f}"
             f"{point.f1:<12.4f}"
@@ -85,16 +105,37 @@ def main() -> None:
         )
 
     best = min(
-        sweep,
+        validation_sweep,
         key=lambda point: point.total_cost,
     )
 
-    print("\nBest threshold by financial cost")
-    print(f"Threshold: {best.threshold:.2f}")
-    print(f"Precision: {best.precision:.4f}")
-    print(f"Recall:    {best.recall:.4f}")
-    print(f"F1:        {best.f1:.4f}")
-    print(f"Cost:      {best.total_cost:.2f}")
+    locked_threshold = best.threshold
+
+    print("\nSelected on validation set")
+    print(f"Threshold: {locked_threshold:.3f}")
+
+    test_result = evaluate_independent_worlds(
+        train_world,
+        test_world,
+    )
+
+    test_point = sweep_thresholds(
+        test_result.test_labels,
+        test_result.hybrid_probabilities,
+        cost_model,
+        thresholds=[locked_threshold],
+    )[0]
+
+    print("\nLOCKED THRESHOLD — FINAL TEST")
+    print("=" * 45)
+
+    print(f"Threshold: {test_point.threshold:.3f}")
+    print(f"Precision: {test_point.precision:.4f}")
+    print(f"Recall:    {test_point.recall:.4f}")
+    print(f"F1:        {test_point.f1:.4f}")
+    print(f"FP:        {test_point.false_positives}")
+    print(f"FN:        {test_point.false_negatives}")
+    print(f"Cost:      {test_point.total_cost:.2f}")
 
 
 if __name__ == "__main__":
