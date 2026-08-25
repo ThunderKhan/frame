@@ -18,6 +18,7 @@ from frame.evaluation.metrics import (
 )
 from frame.evaluation.worlds import (
     SyntheticWorld,
+    build_hard_negative_world,
     build_synthetic_world,
 )
 
@@ -28,6 +29,7 @@ __all__ = [
     "ModelComparison",
     "SyntheticWorld",
     "ThresholdResult",
+    "build_hard_negative_world",
     "build_synthetic_world",
     "compare_models",
     "evaluate_independent_worlds",
