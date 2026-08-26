@@ -6,18 +6,16 @@ from dataclasses import dataclass
 
 import httpx
 
-from frame.domain.transaction import (
-    Transaction,
+from frame.data.fraud import inject_device_farm
+from frame.data.generator import (
+    generate_legitimate_transactions,
 )
-from frame.evaluation.worlds import (
-    build_synthetic_world,
-)
+from frame.domain.transaction import Transaction
 
 
 DEFAULT_API_BASE = "http://127.0.0.1:8000"
 DEFAULT_DELAY = 0.45
 DEFAULT_PHASE_PAUSE = 2.0
-DEFAULT_BENIGN_COUNT = 18
 
 
 @dataclass(frozen=True)
@@ -26,100 +24,94 @@ class DemoTransaction:
     phase: str
 
 
-def build_demo_transactions(
-    benign_count: int,
-) -> list[DemoTransaction]:
+def build_demo_transactions() -> list[DemoTransaction]:
     """
-    Build a deliberately choreographed demo.
+    Build a high-signal synthetic coordinated-abuse demo.
 
-    The underlying synthetic world is unchanged. We only
-    choose which transactions to stream and in what demo
-    sequence they are presented.
+    This is intentionally a demonstration scenario, not the
+    benchmark configuration.
 
-    Sequence:
-        1. Benign traffic establishes a normal baseline.
-        2. Fraud-ring transactions arrive chronologically.
-        3. The demo ends immediately after the ring sequence.
+    The model and policy are unchanged.
 
-    Ground-truth labels are used only here to construct the
-    synthetic demo. They are never sent to the risk API.
+    Demo ring:
+        - 5 customers
+        - 4 transactions per customer
+        - 100% shared device
+        - 100% shared IP
+
+    Transactions are still streamed in exact chronological
+    order, including legitimate activity interleaved with
+    the planted ring.
+
+    Ground-truth labels are used only to identify the demo
+    window. They are never sent to the scoring API.
     """
 
-    world = build_synthetic_world(
-        legitimate_count=60,
-        ring_count=1,
-        ring_size=4,
-        transactions_per_account=3,
+    legitimate = generate_legitimate_transactions(
+        count=60,
         seed=2026,
     )
 
+    world_transactions = inject_device_farm(
+        legitimate,
+        ring_id="demo_ring_001",
+        ring_size=5,
+        transactions_per_account=4,
+        seed=3026,
+        shared_device_ratio=1.0,
+        shared_ip_ratio=1.0,
+    )
+
     ordered = sorted(
-        world.transactions,
+        world_transactions,
         key=lambda transaction: (
             transaction.timestamp,
             transaction.transaction_id,
         ),
     )
 
-    fraud_transactions = [
-        transaction
-        for transaction in ordered
+    fraud_positions = [
+        index
+        for index, transaction in enumerate(ordered)
         if transaction.is_fraud
     ]
 
-    if not fraud_transactions:
+    if not fraud_positions:
         raise RuntimeError(
             "Synthetic demo world contains no fraud transactions."
         )
 
-    first_fraud_timestamp = min(
-        transaction.timestamp
-        for transaction in fraud_transactions
+    first_fraud_index = min(
+        fraud_positions
     )
 
-    benign_before_ring = [
-        transaction
-        for transaction in ordered
-        if (
-            not transaction.is_fraud
-            and transaction.timestamp
-            < first_fraud_timestamp
-        )
-    ]
-
-    if len(benign_before_ring) < benign_count:
-        raise RuntimeError(
-            "Not enough benign transactions occur before "
-            "the synthetic fraud ring for this demo."
-        )
-
-    selected_benign = benign_before_ring[
-        -benign_count:
-    ]
-
-    selected_fraud = sorted(
-        fraud_transactions,
-        key=lambda transaction: (
-            transaction.timestamp,
-            transaction.transaction_id,
-        ),
+    last_fraud_index = max(
+        fraud_positions
     )
 
-    demo_transactions = [
-        DemoTransaction(
-            transaction=transaction,
-            phase="BASELINE",
-        )
-        for transaction in selected_benign
+    selected = ordered[
+        : last_fraud_index + 1
     ]
 
-    demo_transactions.extend(
-        DemoTransaction(
-            transaction=transaction,
-            phase="RING",
+    demo_transactions: list[
+        DemoTransaction
+    ] = []
+
+    for index, transaction in enumerate(
+        selected
+    ):
+        phase = (
+            "BASELINE"
+            if index < first_fraud_index
+            else "COORDINATION"
         )
-        for transaction in selected_fraud
-    )
+
+        demo_transactions.append(
+            DemoTransaction(
+                transaction=transaction,
+                phase=phase,
+            )
+        )
 
     return demo_transactions
 
@@ -128,10 +120,10 @@ def transaction_payload(
     transaction: Transaction,
 ) -> dict[str, object]:
     """
-    Convert an internal synthetic Transaction into the
-    payload sent to FRAME.
+    Convert an internal synthetic transaction into the
+    public scoring payload.
 
-    Synthetic ground-truth labels are deliberately excluded.
+    Ground-truth fraud labels are deliberately excluded.
     """
 
     return transaction.model_dump(
@@ -162,6 +154,7 @@ def ensure_clean_state(
     response = client.get(
         "/api/v1/stats",
     )
+
     response.raise_for_status()
 
     stats = response.json()
@@ -178,37 +171,71 @@ def ensure_clean_state(
         and not allow_dirty_state
     ):
         print()
-        print("FRAME DEMO STATE IS NOT CLEAN")
+        print(
+            "FRAME DEMO STATE IS NOT CLEAN"
+        )
         print("=" * 72)
+
         print(
             f"Existing transactions scored: "
             f"{transactions_scored}"
         )
+
         print()
         print(
             "Restart the FastAPI backend before a clean demo:"
         )
         print()
+
         print(
             "python -m uvicorn "
             "frame.api.app:app --reload"
         )
+
         print()
         print(
-            "Then run this streamer again."
+            "Development override:"
         )
         print()
-        print(
-            "For development only, you can bypass this check with:"
-        )
-        print()
+
         print(
             "python scripts\\stream_demo_transactions.py "
             "--allow-dirty-state"
         )
+
         print()
 
         raise SystemExit(1)
+
+
+def get_evidence(
+    result: dict[str, object],
+) -> list[dict[str, object]]:
+    raw_evidence = result.get(
+        "evidence",
+        [],
+    )
+
+    if not isinstance(
+        raw_evidence,
+        list,
+    ):
+        return []
+
+    evidence: list[
+        dict[str, object]
+    ] = []
+
+    for item in raw_evidence:
+        if isinstance(
+            item,
+            dict,
+        ):
+            evidence.append(
+                item
+            )
+
+    return evidence
 
 
 def print_transaction_result(
@@ -225,16 +252,9 @@ def print_transaction_result(
         result["risk_score"]
     )
 
-    evidence = result.get(
-        "evidence",
-        [],
+    evidence = get_evidence(
+        result
     )
-
-    if not isinstance(
-        evidence,
-        list,
-    ):
-        evidence = []
 
     marker = {
         "ALLOW": "   ",
@@ -261,12 +281,6 @@ def print_transaction_result(
         return
 
     for item in evidence:
-        if not isinstance(
-            item,
-            dict,
-        ):
-            continue
-
         evidence_type = str(
             item.get(
                 "type",
@@ -291,7 +305,7 @@ def print_transaction_result(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Run the choreographed FRAME live fraud-ring demo."
+            "Run the high-signal FRAME live fraud-ring demo."
         ),
     )
 
@@ -319,18 +333,8 @@ def main() -> None:
         type=float,
         default=DEFAULT_PHASE_PAUSE,
         help=(
-            "Pause before fraud-ring traffic begins "
+            "Pause when coordinated activity begins "
             f"(default: {DEFAULT_PHASE_PAUSE}s)"
-        ),
-    )
-
-    parser.add_argument(
-        "--benign-count",
-        type=int,
-        default=DEFAULT_BENIGN_COUNT,
-        help=(
-            "Number of benign baseline transactions "
-            f"(default: {DEFAULT_BENIGN_COUNT})"
         ),
     )
 
@@ -345,11 +349,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.benign_count < 1:
-        parser.error(
-            "--benign-count must be at least 1"
-        )
-
     if args.delay < 0:
         parser.error(
             "--delay cannot be negative"
@@ -361,9 +360,7 @@ def main() -> None:
         )
 
     demo_transactions = (
-        build_demo_transactions(
-            benign_count=args.benign_count,
-        )
+        build_demo_transactions()
     )
 
     baseline_count = sum(
@@ -371,40 +368,71 @@ def main() -> None:
         for item in demo_transactions
     )
 
-    ring_count = sum(
-        item.phase == "RING"
+    coordination_count = sum(
+        item.phase == "COORDINATION"
         for item in demo_transactions
     )
 
     print()
-    print("FRAME LIVE FRAUD-RING DEMO")
-    print("=" * 72)
     print(
-        f"API:             {args.api_base}"
-    )
-    print(
-        f"Baseline tx:     {baseline_count}"
-    )
-    print(
-        f"Ring tx:         {ring_count}"
-    )
-    print(
-        f"Total tx:        {len(demo_transactions)}"
-    )
-    print(
-        f"Transaction gap: {args.delay:.2f}s"
+        "FRAME LIVE FRAUD-RING DEMO"
     )
     print("=" * 72)
+
+    print(
+        f"API:                {args.api_base}"
+    )
+
+    print(
+        f"Baseline window:    {baseline_count}"
+    )
+
+    print(
+        f"Coordination window:{coordination_count:>5}"
+    )
+
+    print(
+        f"Total streamed:     {len(demo_transactions)}"
+    )
+
+    print(
+        f"Transaction gap:    {args.delay:.2f}s"
+    )
+
+    print()
+    print(
+        "DEMO SCENARIO:"
+    )
+
+    print(
+        "  ring customers   : 5"
+    )
+
+    print(
+        "  tx per customer  : 4"
+    )
+
+    print(
+        "  shared device    : 100%"
+    )
+
+    print(
+        "  shared IP        : 100%"
+    )
+
+    print("=" * 72)
+
+    highest_risk = 0.0
+    review_count = 0
+    block_count = 0
 
     try:
         with httpx.Client(
             base_url=args.api_base,
             timeout=10.0,
         ) as client:
-            health_response = (
-                client.get(
-                    "/health",
-                )
+            health_response = client.get(
+                "/health",
             )
 
             health_response.raise_for_status()
@@ -425,21 +453,24 @@ def main() -> None:
             print_phase_header(
                 "PHASE 01 /// NORMAL TRAFFIC",
                 (
-                    "Individual payments arrive without "
-                    "obvious coordinated abuse."
+                    "FRAME observes ordinary payment activity "
+                    "and builds relationship context."
                 ),
             )
 
-            current_phase = "BASELINE"
+            current_phase = (
+                "BASELINE"
+            )
 
             for index, item in enumerate(
                 demo_transactions,
                 start=1,
             ):
                 if (
-                    item.phase == "RING"
+                    item.phase
+                    == "COORDINATION"
                     and current_phase
-                    != "RING"
+                    != "COORDINATION"
                 ):
                     time.sleep(
                         args.phase_pause
@@ -448,13 +479,14 @@ def main() -> None:
                     print_phase_header(
                         "PHASE 02 /// COORDINATION EMERGES",
                         (
-                            "Shared infrastructure begins "
-                            "connecting otherwise ordinary "
-                            "customer activity."
+                            "Five customers begin reusing the "
+                            "same device and IP infrastructure."
                         ),
                     )
 
-                    current_phase = "RING"
+                    current_phase = (
+                        "COORDINATION"
+                    )
 
                 transaction = (
                     item.transaction
@@ -469,7 +501,32 @@ def main() -> None:
 
                 response.raise_for_status()
 
-                result = response.json()
+                result = (
+                    response.json()
+                )
+
+                risk_score = float(
+                    result[
+                        "risk_score"
+                    ]
+                )
+
+                action = str(
+                    result[
+                        "action"
+                    ]
+                )
+
+                highest_risk = max(
+                    highest_risk,
+                    risk_score,
+                )
+
+                if action == "REVIEW":
+                    review_count += 1
+
+                if action == "BLOCK":
+                    block_count += 1
 
                 print_transaction_result(
                     index=index,
@@ -484,10 +541,8 @@ def main() -> None:
                     args.delay
                 )
 
-            final_stats_response = (
-                client.get(
-                    "/api/v1/stats",
-                )
+            final_stats_response = client.get(
+                "/api/v1/stats",
             )
 
             final_stats_response.raise_for_status()
@@ -518,6 +573,7 @@ def main() -> None:
         print(
             "FRAME API returned an error:"
         )
+
         print(
             f"{exc.response.status_code} "
             f"{exc.response.text}"
@@ -526,49 +582,96 @@ def main() -> None:
         raise SystemExit(1)
 
     print_phase_header(
-        "PHASE 03 /// RING INTERCEPTED",
+        "PHASE 03 /// ANALYST HANDOFF",
         (
-            "The demo stops here so the detected "
-            "coordination remains visible in FRAME."
+            "The synthetic coordination window ends and "
+            "FRAME leaves the suspicious cluster visible "
+            "for analyst inspection."
         ),
     )
 
     print(
         "FINAL COMMAND-CENTER STATE"
     )
+
     print(
-        f"  scored : "
+        f"  scored       : "
         f"{final_stats['transactions_scored']}"
     )
+
     print(
-        f"  allow  : "
+        f"  allow        : "
         f"{final_stats['allowed']}"
     )
+
     print(
-        f"  review : "
+        f"  review       : "
         f"{final_stats['reviewed']}"
     )
+
     print(
-        f"  block  : "
+        f"  block        : "
         f"{final_stats['blocked']}"
     )
+
     print(
-        f"  nodes  : "
+        f"  highest risk : "
+        f"{highest_risk:.3f}"
+    )
+
+    print(
+        f"  graph nodes  : "
         f"{final_stats['graph_nodes']}"
     )
+
     print(
-        f"  edges  : "
+        f"  graph edges  : "
         f"{final_stats['graph_edges']}"
     )
 
     print()
     print(
+        "DEMO DECISIONS"
+    )
+
+    print(
+        f"  reviews seen : "
+        f"{review_count}"
+    )
+
+    print(
+        f"  blocks seen  : "
+        f"{block_count}"
+    )
+
+    print()
+
+    if block_count == 0:
+        print(
+            "WARNING /// NO BLOCK DECISION OCCURRED"
+        )
+
+        print(
+            "Do not present this run as a BLOCK demo."
+        )
+    else:
+        print(
+            "XXX HIGH-RISK COORDINATION INTERCEPTED"
+        )
+
+    print()
+    print(
         ">>> KEEP THE DASHBOARD OPEN"
     )
+
     print(
-        ">>> REVIEW THE LIVE GRAPH "
-        "AND RECENT DECISIONS"
+        ">>> INSPECT THE RED SHARED-INFRASTRUCTURE CLUSTER"
     )
+
+    print(
+        ">>> REVIEW THE LATEST REVIEW / BLOCK DECISIONS"
+    )
+
     print()
 
 
