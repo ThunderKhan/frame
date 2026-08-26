@@ -18,6 +18,8 @@ from frame.domain.transaction import (
     Transaction,
 )
 from frame.risk.engine import RiskEngine
+from frame.risk.result import RiskResult
+
 
 risk_engine: RiskEngine | None = None
 
@@ -45,6 +47,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -56,6 +59,61 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def require_engine() -> RiskEngine:
+    if risk_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="risk engine unavailable",
+        )
+
+    return risk_engine
+
+
+def serialize_evidence(
+    result: RiskResult,
+) -> list[dict[str, object]]:
+    return [
+        {
+            "type": (
+                evidence.evidence_type.value
+            ),
+            "severity": (
+                evidence.severity
+            ),
+            "message": (
+                evidence.message
+            ),
+            "value": (
+                evidence.value
+            ),
+        }
+        for evidence in result.evidence
+    ]
+
+
+def serialize_risk_detail(
+    result: RiskResult,
+) -> dict[str, object]:
+    return {
+        "transaction_id": (
+            result.transaction_id
+        ),
+        "risk_score": (
+            result.probability
+        ),
+        "action": (
+            result.action.value
+        ),
+        "evidence_count": len(
+            result.evidence
+        ),
+        "evidence": serialize_evidence(
+            result
+        ),
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {
@@ -63,15 +121,12 @@ def health() -> dict[str, str]:
         "service": "frame-risk-api",
     }
 
+
 @app.get("/api/v1/stats")
 def get_stats() -> dict[str, object]:
-    if risk_engine is None:
-        raise HTTPException(
-            status_code=503,
-            detail="risk engine unavailable",
-        )
+    engine = require_engine()
 
-    results = risk_engine.results
+    results = engine.results
 
     allowed = sum(
         result.action.value == "ALLOW"
@@ -109,39 +164,33 @@ def get_stats() -> dict[str, object]:
             average_risk
         ),
         "graph_nodes": (
-            risk_engine.graph.number_of_nodes()
+            engine.graph.number_of_nodes()
         ),
         "graph_edges": (
-            risk_engine.graph.number_of_edges()
+            engine.graph.number_of_edges()
         ),
     }
+
 
 @app.get("/api/v1/graph")
 def get_graph() -> dict[
     str,
     list[dict[str, object]],
 ]:
-    if risk_engine is None:
-        raise HTTPException(
-            status_code=503,
-            detail="risk engine unavailable",
-        )
+    engine = require_engine()
 
     return serialize_graph(
-        risk_engine.graph
+        engine.graph
     )
+
 
 @app.get("/api/v1/risk/recent")
 def recent_risk_results(
     limit: int = 50,
 ) -> list[dict[str, object]]:
-    if risk_engine is None:
-        raise HTTPException(
-            status_code=503,
-            detail="risk engine unavailable",
-        )
+    engine = require_engine()
 
-    limited = risk_engine.results[
+    limited = engine.results[
         -limit:
     ]
 
@@ -163,45 +212,52 @@ def recent_risk_results(
         for result in limited
     ]
 
+
+@app.get(
+    "/api/v1/risk/{transaction_id}"
+)
+def get_risk_result(
+    transaction_id: str,
+) -> dict[str, object]:
+    engine = require_engine()
+
+    result = next(
+        (
+            item
+            for item in reversed(
+                engine.results
+            )
+            if (
+                item.transaction_id
+                == transaction_id
+            )
+        ),
+        None,
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "risk result not found"
+            ),
+        )
+
+    return serialize_risk_detail(
+        result
+    )
+
+
 @app.post("/api/v1/risk/score")
 def score_transaction(
     transaction: Transaction,
 ) -> dict[str, object]:
-    if risk_engine is None:
-        raise HTTPException(
-            status_code=503,
-            detail="risk engine unavailable",
-        )
+    engine = require_engine()
 
-    result = risk_engine.score(
+    result = engine.score(
         transaction
     )
 
-    return {
-        "transaction_id": (
-            result.transaction_id
-        ),
-        "risk_score": (
-            result.probability
-        ),
-        "action": (
-            result.action.value
-        ),
-        "evidence": [
-            {
-                "type": (
-                    evidence.evidence_type.value
-                ),
-                "severity": (
-                    evidence.severity
-                ),
-                "message": (
-                    evidence.message
-                ),
-                "value": (
-                    evidence.value
-                ),
-            }
-            for evidence in result.evidence
-        ],
-    }
+    return serialize_risk_detail(
+        result
+    )

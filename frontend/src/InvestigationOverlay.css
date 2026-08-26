@@ -1,0 +1,685 @@
+/*
+ * FRAME INVESTIGATION DRAWER
+ *
+ * The drawer intentionally uses the existing
+ * FRAME theme tokens from App.css.
+ */
+
+.decision-row:has(
+  .decision-action.review
+),
+.decision-row:has(
+  .decision-action.block
+) {
+  cursor: pointer;
+}
+
+.decision-row:has(
+  .decision-action.review
+)::after,
+.decision-row:has(
+  .decision-action.block
+)::after {
+  content: ">>> INSPECT";
+
+  position: absolute;
+  right: 144px;
+
+  opacity: 0;
+
+  color: var(--red);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  pointer-events: none;
+
+  transition:
+    opacity 90ms linear;
+}
+
+.decision-row:has(
+  .decision-action.review
+):hover::after,
+.decision-row:has(
+  .decision-action.block
+):hover::after {
+  opacity: 1;
+}
+
+
+.investigation-layer {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+  justify-content: flex-end;
+
+  pointer-events: none;
+}
+
+
+.investigation-backdrop {
+  position: absolute;
+
+  inset: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+
+  cursor: default;
+
+  pointer-events: auto;
+
+  backdrop-filter:
+    blur(2px);
+
+  -webkit-backdrop-filter:
+    blur(2px);
+}
+
+
+.investigation-panel {
+  position: relative;
+
+  z-index: 2;
+
+  width:
+    min(
+      560px,
+      94vw
+    );
+
+  height: 100%;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  border-left:
+    1px solid
+    var(--ink);
+
+  color:
+    var(--ink);
+
+  background:
+    var(--paper);
+
+  pointer-events: auto;
+
+  animation:
+    investigationEnter
+    150ms
+    cubic-bezier(
+      0.2,
+      0.8,
+      0.2,
+      1
+    );
+}
+
+
+@keyframes investigationEnter {
+  from {
+    transform:
+      translateX(
+        100%
+      );
+  }
+
+  to {
+    transform:
+      translateX(
+        0
+      );
+  }
+}
+
+
+.investigation-header {
+  min-height: 220px;
+
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 24px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+}
+
+
+.investigation-header span {
+  display: block;
+
+  margin-bottom: 22px;
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+
+.investigation-header h2 {
+  margin: 0;
+
+  color:
+    var(--ink);
+
+  font-size:
+    clamp(
+      2.5rem,
+      5vw,
+      4.6rem
+    );
+
+  font-weight: 900;
+
+  line-height: 0.83;
+
+  letter-spacing:
+    -0.065em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-close {
+  flex: 0 0 auto;
+
+  padding:
+    9px
+    11px;
+
+  border:
+    1px solid
+    var(--ink);
+
+  border-radius: 0;
+
+  color:
+    var(--ink);
+
+  background:
+    transparent;
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  cursor: pointer;
+}
+
+
+.investigation-close:hover {
+  color:
+    var(--paper);
+
+  background:
+    var(--ink);
+}
+
+
+.investigation-case-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap: 1px;
+
+  background:
+    var(--ink);
+
+  border-bottom:
+    1px solid
+    var(--ink);
+}
+
+
+.investigation-case-grid > div {
+  min-height: 112px;
+
+  padding: 16px;
+
+  color:
+    var(--ink);
+
+  background:
+    var(--panel-strong);
+}
+
+
+.investigation-case-grid span {
+  display: block;
+
+  margin-bottom: 12px;
+
+  color:
+    var(--ink-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-case-grid strong {
+  display: block;
+
+  overflow-wrap:
+    anywhere;
+
+  color:
+    var(--ink);
+
+  font-size:
+    1.75rem;
+
+  font-weight: 900;
+
+  line-height: 1;
+
+  letter-spacing:
+    -0.04em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.investigation-case-id {
+  grid-column:
+    1 / -1;
+}
+
+
+.investigation-case-id strong {
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size:
+    clamp(
+      1.35rem,
+      3vw,
+      2rem
+    );
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.investigation-action.review,
+.investigation-action.block {
+  color:
+    var(--red);
+}
+
+
+.investigation-disclaimer {
+  padding:
+    20px
+    24px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+}
+
+
+.investigation-disclaimer strong {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color:
+    var(--red);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 11px;
+
+  letter-spacing:
+    0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-disclaimer p {
+  margin: 0;
+
+  max-width: 470px;
+
+  color:
+    var(--ink-soft);
+
+  font-size: 14px;
+
+  line-height: 1.5;
+}
+
+
+.investigation-evidence-list > header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding:
+    14px
+    18px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+
+  color:
+    var(--ink);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing:
+    0.09em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-evidence {
+  padding:
+    18px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+}
+
+
+.investigation-evidence:hover {
+  background:
+    var(--panel-muted);
+}
+
+
+.investigation-evidence-header {
+  display: grid;
+
+  grid-template-columns:
+    36px
+    minmax(
+      0,
+      1fr
+    )
+    auto;
+
+  gap: 10px;
+
+  align-items:
+    baseline;
+}
+
+
+.investigation-evidence-header span {
+  color:
+    var(--ink-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+
+  letter-spacing:
+    0.08em;
+}
+
+
+.investigation-evidence-header strong {
+  color:
+    var(--red);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 12px;
+
+  letter-spacing:
+    0.08em;
+}
+
+
+.investigation-evidence p {
+  margin:
+    14px
+    0;
+
+  color:
+    var(--ink);
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+
+.investigation-severity {
+  width: 100%;
+  height: 3px;
+
+  overflow: hidden;
+
+  background:
+    var(--panel-muted);
+}
+
+
+.investigation-severity span {
+  display: block;
+
+  height: 100%;
+
+  background:
+    var(--red);
+}
+
+
+.investigation-footer {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap: 10px;
+
+  padding:
+    18px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+
+  color:
+    var(--ink-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing:
+    0.09em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-loading,
+.investigation-error,
+.investigation-empty {
+  min-height: 180px;
+
+  display: grid;
+
+  place-items:
+    center;
+
+  padding: 30px;
+
+  color:
+    var(--ink-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing:
+    0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-error {
+  color:
+    var(--red);
+}
+
+
+@media (
+  max-width: 600px
+) {
+  .investigation-panel {
+    width:
+      100vw;
+  }
+
+  .investigation-header {
+    min-height:
+      180px;
+
+    padding:
+      18px;
+  }
+
+  .investigation-header h2 {
+    font-size:
+      clamp(
+        2.6rem,
+        14vw,
+        4.5rem
+      );
+  }
+
+  .investigation-case-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .investigation-case-id {
+    grid-column:
+      auto;
+  }
+
+  .decision-row:has(
+    .decision-action.review
+  )::after,
+  .decision-row:has(
+    .decision-action.block
+  )::after {
+    display: none;
+  }
+}
+
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+  .investigation-panel {
+    animation: none;
+  }
+}
