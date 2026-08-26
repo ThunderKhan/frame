@@ -14,6 +14,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![NetworkX](https://img.shields.io/badge/NetworkX-Graph%20Analysis-2C5BB4?style=flat-square)](https://networkx.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?style=flat-square&logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
+[![CI](https://github.com/ThunderKhan/frame/actions/workflows/ci.yml/badge.svg)](https://github.com/ThunderKhan/frame/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 <br />
