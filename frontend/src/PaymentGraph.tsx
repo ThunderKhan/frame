@@ -38,6 +38,12 @@ interface RenderLink {
   suspicious: boolean;
 }
 
+interface ThemeColors {
+  red: string;
+  graphBackground: string;
+  graphForeground: string;
+}
+
 function endpointId(
   endpoint:
     | string
@@ -132,13 +138,12 @@ function buildSuspiciousInfrastructure(
       ) ?? 0;
 
     /*
-     * Device/IP degree directly represents
-     * how many customer nodes are linked to
-     * that infrastructure in FRAME's graph.
+     * This is an observed graph property,
+     * not model attribution.
      *
-     * Degree >= 2 therefore means the
-     * infrastructure is shared across
-     * multiple customers.
+     * A device/IP with degree >= 2 has
+     * already been observed across more
+     * than one customer relationship.
      */
     if (
       (
@@ -194,29 +199,13 @@ function buildSuspiciousNeighbors(
   return neighbors;
 }
 
-function themeColors() {
+function themeColors(): ThemeColors {
   const root =
     getComputedStyle(
       document.documentElement,
     );
 
   return {
-    paper:
-      root
-        .getPropertyValue(
-          "--paper",
-        )
-        .trim() ||
-      "#f4f4f0",
-
-    ink:
-      root
-        .getPropertyValue(
-          "--ink",
-        )
-        .trim() ||
-      "#050505",
-
     red:
       root
         .getPropertyValue(
@@ -243,7 +232,7 @@ function themeColors() {
   };
 }
 
-function abbreviatedLabel(
+function abbreviatedEntityLabel(
   node: RenderNode,
 ): string {
   const entity =
@@ -253,14 +242,14 @@ function abbreviatedLabel(
     );
 
   if (
-    entity.length <= 18
+    entity.length <= 21
   ) {
     return entity;
   }
 
   return `${entity.slice(
     0,
-    15,
+    18,
   )}...`;
 }
 
@@ -300,6 +289,285 @@ function nodeRadius(
   }
 }
 
+function drawBackingPlate(
+  context:
+    CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  align:
+    | "left"
+    | "right",
+  background: string,
+) {
+  const horizontalPadding = 4;
+  const verticalPadding = 3;
+
+  const plateX =
+    align === "left"
+      ? x -
+        horizontalPadding
+      : x -
+        width -
+        horizontalPadding;
+
+  const plateY =
+    y -
+    height /
+      2 -
+    verticalPadding;
+
+  context.fillStyle =
+    background;
+
+  context.globalAlpha =
+    0.88;
+
+  context.fillRect(
+    plateX,
+    plateY,
+    width +
+      horizontalPadding *
+        2,
+    height +
+      verticalPadding *
+        2,
+  );
+
+  context.globalAlpha =
+    1;
+}
+
+function drawSuspiciousLabel(
+  context:
+    CanvasRenderingContext2D,
+  node: RenderNode,
+  radius: number,
+  globalScale: number,
+  colors: ThemeColors,
+) {
+  const x =
+    node.x ?? 0;
+
+  const y =
+    node.y ?? 0;
+
+  const nodeType =
+    node.node_type ??
+    "entity";
+
+  /*
+   * Device labels live to the LEFT.
+   * IP labels live to the RIGHT.
+   *
+   * This deliberately separates the two
+   * highest-value labels in the fraud ring.
+   */
+  const labelOnLeft =
+    nodeType ===
+    "device";
+
+  const direction =
+    labelOnLeft
+      ? -1
+      : 1;
+
+  const textAlign:
+    | "left"
+    | "right" =
+    labelOnLeft
+      ? "right"
+      : "left";
+
+  const labelX =
+    x +
+    direction *
+      (
+        radius +
+        11
+      );
+
+  const primaryY =
+    y - 3;
+
+  const secondaryY =
+    y + 9;
+
+  const primary =
+    nodeType ===
+    "device"
+      ? "SHARED DEVICE"
+      : nodeType ===
+          "ip"
+        ? "SHARED IP"
+        : "SHARED INFRA";
+
+  const secondary =
+    abbreviatedEntityLabel(
+      node,
+    );
+
+  const primarySize =
+    Math.max(
+      3.4,
+      11 /
+        globalScale,
+    );
+
+  const secondarySize =
+    Math.max(
+      2.7,
+      8 /
+        globalScale,
+    );
+
+  context.textAlign =
+    textAlign;
+
+  context.textBaseline =
+    "middle";
+
+  context.font =
+    `800 ${primarySize}px ` +
+    `"JetBrains Mono", ` +
+    `Consolas, monospace`;
+
+  const primaryWidth =
+    context.measureText(
+      primary,
+    ).width;
+
+  context.font =
+    `700 ${secondarySize}px ` +
+    `"JetBrains Mono", ` +
+    `Consolas, monospace`;
+
+  const secondaryWidth =
+    context.measureText(
+      secondary,
+    ).width;
+
+  const plateWidth =
+    Math.max(
+      primaryWidth,
+      secondaryWidth,
+    );
+
+  drawBackingPlate(
+    context,
+    labelX,
+    y + 3,
+    plateWidth,
+    primarySize +
+      secondarySize +
+      10,
+    textAlign,
+    colors.graphBackground,
+  );
+
+  context.textAlign =
+    textAlign;
+
+  context.textBaseline =
+    "middle";
+
+  context.font =
+    `800 ${primarySize}px ` +
+    `"JetBrains Mono", ` +
+    `Consolas, monospace`;
+
+  context.fillStyle =
+    colors.red;
+
+  context.fillText(
+    primary,
+    labelX,
+    primaryY,
+  );
+
+  context.font =
+    `700 ${secondarySize}px ` +
+    `"JetBrains Mono", ` +
+    `Consolas, monospace`;
+
+  context.fillStyle =
+    "rgba(244, 244, 240, 0.62)";
+
+  context.fillText(
+    secondary,
+    labelX,
+    secondaryY,
+  );
+}
+
+function drawContextLabel(
+  context:
+    CanvasRenderingContext2D,
+  node: RenderNode,
+  radius: number,
+  globalScale: number,
+  colors: ThemeColors,
+) {
+  const x =
+    node.x ?? 0;
+
+  const y =
+    node.y ?? 0;
+
+  const label =
+    abbreviatedEntityLabel(
+      node,
+    );
+
+  const fontSize =
+    Math.max(
+      2.8,
+      9 /
+        globalScale,
+    );
+
+  context.font =
+    `700 ${fontSize}px ` +
+    `"JetBrains Mono", ` +
+    `Consolas, monospace`;
+
+  context.textAlign =
+    "left";
+
+  context.textBaseline =
+    "middle";
+
+  const labelX =
+    x +
+    radius +
+    5;
+
+  const width =
+    context.measureText(
+      label,
+    ).width;
+
+  drawBackingPlate(
+    context,
+    labelX,
+    y,
+    width,
+    fontSize,
+    "left",
+    colors.graphBackground,
+  );
+
+  context.fillStyle =
+    colors.graphForeground;
+
+  context.fillText(
+    label,
+    labelX,
+    y,
+  );
+}
+
 export function PaymentGraph({
   graph,
 }: PaymentGraphProps) {
@@ -326,7 +594,8 @@ export function PaymentGraph({
         const nodes: RenderNode[] =
           graph.nodes.map(
             (node) => ({
-              id: node.id,
+              id:
+                node.id,
 
               node_type:
                 node.attributes
@@ -379,6 +648,7 @@ export function PaymentGraph({
         return {
           nodes,
           links,
+
           suspiciousCount:
             suspiciousInfrastructure
               .size,
@@ -395,10 +665,15 @@ export function PaymentGraph({
       <div
         className="empty-state"
         style={{
-          width: "100%",
-          height: "620px",
+          width:
+            "100%",
 
-          display: "grid",
+          height:
+            "620px",
+
+          display:
+            "grid",
+
           placeItems:
             "center",
 
@@ -421,8 +696,10 @@ export function PaymentGraph({
             "uppercase",
         }}
       >
-        &gt;&gt;&gt; WAITING
-        FOR GRAPH ACTIVITY
+        &gt;&gt;&gt;
+        {" "}
+        WAITING FOR
+        GRAPH ACTIVITY
       </div>
     );
   }
@@ -442,6 +719,7 @@ export function PaymentGraph({
         graphData={{
           nodes:
             graphData.nodes,
+
           links:
             graphData.links,
         }}
@@ -450,11 +728,17 @@ export function PaymentGraph({
           colors.graphBackground
         }
 
-        nodeRelSize={4}
+        nodeRelSize={
+          4
+        }
 
-        warmupTicks={80}
+        warmupTicks={
+          80
+        }
 
-        cooldownTicks={120}
+        cooldownTicks={
+          120
+        }
 
         d3AlphaDecay={
           0.035
@@ -476,7 +760,9 @@ export function PaymentGraph({
             return colors.red;
           }
 
-          return "rgba(244, 244, 240, 0.16)";
+          return (
+            "rgba(244, 244, 240, 0.13)"
+          );
         }}
 
         linkWidth={(
@@ -485,9 +771,11 @@ export function PaymentGraph({
           const link =
             rawLink as RenderLink;
 
-          return link.suspicious
-            ? 2.4
-            : 0.65;
+          return (
+            link.suspicious
+              ? 2.2
+              : 0.55
+          );
         }}
 
         linkDirectionalParticles={(
@@ -496,9 +784,11 @@ export function PaymentGraph({
           const link =
             rawLink as RenderLink;
 
-          return link.suspicious
-            ? 2
-            : 0;
+          return (
+            link.suspicious
+              ? 2
+              : 0
+          );
         }}
 
         linkDirectionalParticleWidth={(
@@ -507,9 +797,11 @@ export function PaymentGraph({
           const link =
             rawLink as RenderLink;
 
-          return link.suspicious
-            ? 2
-            : 0;
+          return (
+            link.suspicious
+              ? 1.7
+              : 0
+          );
         }}
 
         linkDirectionalParticleColor={() =>
@@ -536,8 +828,7 @@ export function PaymentGraph({
             );
 
           /*
-           * Suspicious shared infrastructure:
-           * solid hazard red.
+           * SHARED DEVICE / IP
            */
           if (
             node.suspiciousInfrastructure
@@ -557,7 +848,7 @@ export function PaymentGraph({
               colors.red;
 
             context.lineWidth =
-              1.3;
+              1.2;
 
             context.stroke();
 
@@ -580,9 +871,9 @@ export function PaymentGraph({
             node.suspiciousNeighbor
           ) {
             /*
-             * Customers connected to shared
-             * infrastructure stay paper-colored
-             * but receive a strong outline.
+             * Connected customers remain
+             * monochrome but receive a
+             * clearly visible outline.
              */
             context.beginPath();
 
@@ -604,14 +895,13 @@ export function PaymentGraph({
               colors.graphForeground;
 
             context.lineWidth =
-              1.5;
+              1.4;
 
             context.stroke();
           } else {
             /*
-             * Ordinary graph context is intentionally
-             * subdued. It remains visible without
-             * competing with suspicious structure.
+             * Ordinary graph context should
+             * stay visually subordinate.
              */
             context.beginPath();
 
@@ -625,99 +915,64 @@ export function PaymentGraph({
             );
 
             context.fillStyle =
-              "rgba(244, 244, 240, 0.28)";
+              "rgba(244, 244, 240, 0.24)";
 
             context.fill();
           }
 
-          const alwaysLabel =
-            node
-              .suspiciousInfrastructure;
-
-          const neighborLabel =
-            node
-              .suspiciousNeighbor &&
-            globalScale >
-              1.35;
-
-          const zoomLabel =
-            globalScale >
-            3;
-
-          if (
-            !alwaysLabel &&
-            !neighborLabel &&
-            !zoomLabel
-          ) {
-            return;
-          }
-
-          const label =
-            abbreviatedLabel(
-              node,
-            );
-
-          const typeLabel =
-            node.node_type
-              ?.toUpperCase() ??
-            "ENTITY";
-
-          const fontSize =
-            Math.max(
-              3.2,
-              11 /
-                globalScale,
-            );
-
-          context.font =
-            `700 ${fontSize}px ` +
-            `"JetBrains Mono", ` +
-            `Consolas, monospace`;
-
-          context.textBaseline =
-            "middle";
-
-          context.fillStyle =
-            node
-              .suspiciousInfrastructure
-              ? colors.red
-              : colors
-                  .graphForeground;
-
-          context.fillText(
-            label,
-            x +
-              radius +
-              5,
-            y - 2,
-          );
-
+          /*
+           * Suspicious infrastructure always
+           * gets a deliberate, non-colliding
+           * primary label.
+           */
           if (
             node.suspiciousInfrastructure
           ) {
-            const microSize =
-              Math.max(
-                2.7,
-                8 /
-                  globalScale,
-              );
+            drawSuspiciousLabel(
+              context,
+              node,
+              radius,
+              globalScale,
+              colors,
+            );
 
-            context.font =
-              `700 ${microSize}px ` +
-              `"JetBrains Mono", ` +
-              `Consolas, monospace`;
+            return;
+          }
 
-            context.fillStyle =
-              "rgba(244, 244, 240, 0.62)";
+          /*
+           * Connected customers don't need
+           * labels until the analyst zooms in.
+           */
+          if (
+            node.suspiciousNeighbor &&
+            globalScale >
+              2
+          ) {
+            drawContextLabel(
+              context,
+              node,
+              radius,
+              globalScale,
+              colors,
+            );
 
-            context.fillText(
-              `[ SHARED ${typeLabel} ]`,
-              x +
-                radius +
-                5,
-              y +
-                fontSize +
-                2,
+            return;
+          }
+
+          /*
+           * Ordinary context labels appear
+           * only at close inspection.
+           */
+          if (
+            globalScale >
+            4
+          ) {
+            drawContextLabel(
+              context,
+              node,
+              radius,
+              globalScale,
+              colors,
             );
           }
         }}
@@ -773,13 +1028,16 @@ export function PaymentGraph({
               node.entity_id ??
                 node.id,
             ),
+
             `TYPE: ${
               node.node_type ??
               "unknown"
             }`,
+
             `DEGREE: ${
               node.degree
             }`,
+
             status,
           ].join(
             "\n",
@@ -805,7 +1063,9 @@ export function PaymentGraph({
           return [
             link.relation ??
               "relationship",
+
             `${source} → ${target}`,
+
             link.suspicious
               ? "SHARED-INFRASTRUCTURE PATH"
               : "OBSERVED RELATIONSHIP",
@@ -820,16 +1080,20 @@ export function PaymentGraph({
           position:
             "absolute",
 
-          left: "18px",
+          left:
+            "18px",
+
           bottom:
             "18px",
 
-          zIndex: 5,
+          zIndex:
+            5,
 
           display:
             "grid",
 
-          gap: "8px",
+          gap:
+            "8px",
 
           minWidth:
             "230px",
@@ -844,7 +1108,7 @@ export function PaymentGraph({
             colors.graphForeground,
 
           background:
-            "rgba(5,5,5,0.78)",
+            "rgba(5,5,5,0.82)",
 
           backdropFilter:
             "blur(10px)",
