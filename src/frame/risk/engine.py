@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from datetime import datetime
+from threading import RLock
 
 import networkx as nx
 import numpy as np
@@ -43,6 +45,8 @@ class RiskEngine:
         self.model = model
         self.policy = policy
 
+        self._lock = RLock()
+
         self.graph = nx.Graph()
 
         self.temporal_state = (
@@ -68,6 +72,15 @@ class RiskEngine:
         ] = {}
 
     def score(
+        self,
+        transaction: Transaction,
+    ) -> RiskResult:
+        with self._lock:
+            return self._score_locked(
+                transaction
+            )
+
+    def _score_locked(
         self,
         transaction: Transaction,
     ) -> RiskResult:
