@@ -160,7 +160,8 @@ def health() -> dict[str, str]:
 def get_stats() -> dict[str, object]:
     engine = require_engine()
 
-    results = engine.results
+    results = engine.snapshot_results()
+    graph = engine.snapshot_graph()
 
     allowed = sum(
         result.action.value == "ALLOW"
@@ -198,10 +199,10 @@ def get_stats() -> dict[str, object]:
             average_risk
         ),
         "graph_nodes": (
-            engine.graph.number_of_nodes()
+            graph.number_of_nodes()
         ),
         "graph_edges": (
-            engine.graph.number_of_edges()
+            graph.number_of_edges()
         ),
     }
 
@@ -213,8 +214,10 @@ def get_graph() -> dict[
 ]:
     engine = require_engine()
 
+    graph = engine.snapshot_graph()
+
     return serialize_graph(
-        engine.graph
+        graph
     )
 
 
@@ -224,7 +227,9 @@ def recent_risk_results(
 ) -> list[dict[str, object]]:
     engine = require_engine()
 
-    limited = engine.results[
+    results = engine.snapshot_results()
+
+    limited = results[
         -limit:
     ]
 
@@ -255,18 +260,8 @@ def get_risk_result(
 ) -> dict[str, object]:
     engine = require_engine()
 
-    result = next(
-        (
-            item
-            for item in reversed(
-                engine.results
-            )
-            if (
-                item.transaction_id
-                == transaction_id
-            )
-        ),
-        None,
+    result = engine.get_result(
+        transaction_id
     )
 
     if result is None:
@@ -278,7 +273,7 @@ def get_risk_result(
         )
 
     transaction = (
-        engine.transactions.get(
+        engine.get_transaction(
             transaction_id
         )
     )

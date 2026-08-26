@@ -170,3 +170,45 @@ class RiskEngine:
         )
 
         return result
+
+    def snapshot_results(
+        self,
+    ) -> tuple[RiskResult, ...]:
+        with self._lock:
+            return tuple(
+                self.results
+            )
+
+    def snapshot_graph(
+        self,
+    ) -> nx.Graph:
+        with self._lock:
+            return self.graph.copy()
+
+    def get_transaction(
+        self,
+        transaction_id: str,
+    ) -> Transaction | None:
+        with self._lock:
+            return self.transactions.get(
+                transaction_id
+            )
+
+    def get_result(
+        self,
+        transaction_id: str,
+    ) -> RiskResult | None:
+        with self._lock:
+            return next(
+                (
+                    item
+                    for item in reversed(
+                        self.results
+                    )
+                    if (
+                        item.transaction_id
+                        == transaction_id
+                    )
+                ),
+                None,
+            )
