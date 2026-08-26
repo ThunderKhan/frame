@@ -277,10 +277,16 @@ button {
 
   min-width: 0;
 
+  /*
+   * Shift the entire hero copy group slightly left.
+   * Keep generous right-side breathing room so
+   * INTELLIGENCE never crowds the column divider.
+   */
   padding:
     60px
     clamp(24px, 3vw, 52px)
-    72px;
+    72px
+    clamp(18px, 2vw, 36px);
 
   border-right: 1px solid var(--ink);
 }
@@ -306,7 +312,11 @@ button {
 .hero-title {
   margin: 0;
 
-  max-width: calc(100% - 28px);
+  /*
+   * Preserve a deliberate gap before the forensic
+   * column divider at desktop widths.
+   */
+  max-width: calc(100% - 42px);
 
   color: var(--ink);
 
@@ -2045,20 +2055,13 @@ button {
 
   .hero-copy {
     padding:
-      36px
-      20px
-      48px;
+      60px
+      clamp(18px, 2.3vw, 40px)
+      72px;
   }
 
   .hero-title {
-    max-width: 100%;
-
-    font-size:
-      clamp(
-        3.2rem,
-        17vw,
-        5.8rem
-      );
+    max-width: calc(100% - 42px);
   }
 
   .hero-summary {
