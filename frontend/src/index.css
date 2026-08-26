@@ -1,7 +1,18 @@
 html {
-  background: #090b10;
+  min-width: 320px;
+  background: #f4f4f0;
 }
 
 body {
+  min-width: 320px;
   min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  color: #f4f4f0;
+  background: #e61919;
 }
