@@ -7,6 +7,9 @@ from fastapi import (
     HTTPException,
 )
 
+from frame.api.graph import (
+    serialize_graph,
+)
 from frame.api.runtime import (
     build_risk_engine,
 )
@@ -49,6 +52,20 @@ def health() -> dict[str, str]:
         "service": "frame-risk-api",
     }
 
+@app.get("/api/v1/graph")
+def get_graph() -> dict[
+    str,
+    list[dict[str, object]],
+]:
+    if risk_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="risk engine unavailable",
+        )
+
+    return serialize_graph(
+        risk_engine.graph
+    )
 
 @app.post("/api/v1/risk/score")
 def score_transaction(
