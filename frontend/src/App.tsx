@@ -94,6 +94,23 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
+    /*
+     * Older versions of the hero CTA used href="#story".
+     * Clear that stale fragment without changing scroll position.
+     */
+    if (
+      window.location.hash ===
+      "#story"
+    ) {
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+  }, []);
+
+  useEffect(() => {
     async function refresh() {
       try {
         const [
@@ -255,6 +272,30 @@ function App() {
     };
   }, []);
 
+  function scrollToStory() {
+    const story =
+      document.getElementById(
+        "story",
+      );
+
+    if (!story) {
+      return;
+    }
+
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+    story.scrollIntoView({
+      behavior:
+        reducedMotion
+          ? "auto"
+          : "smooth",
+      block: "start",
+    });
+  }
+
   const latestDecision =
     recent.length > 0
       ? recent[
@@ -333,7 +374,7 @@ function App() {
           <button
             className="theme-toggle"
             type="button"
-            aria-label={`Switch to ${
+            aria-label={`Current theme is ${theme}. Switch to ${
               theme === "light"
                 ? "dark"
                 : "light"
@@ -347,8 +388,8 @@ function App() {
             }}
           >
             {theme === "light"
-              ? "[ DARK ]"
-              : "[ LIGHT ]"}
+              ? "[ LIGHT → DARK ]"
+              : "[ DARK → LIGHT ]"}
           </button>
         </div>
       </div>
@@ -384,13 +425,16 @@ function App() {
             does not.
           </p>
 
-          <a
+          <button
             className="hero-action"
-            href="#story"
+            type="button"
+            onClick={
+              scrollToStory
+            }
           >
             &gt;&gt;&gt; SEE HOW
             FRAME WORKS
-          </a>
+          </button>
         </div>
 
         <aside className="hero-forensics">
@@ -922,11 +966,9 @@ function App() {
           MODEL:
           FRAME-ONLINE-V1
           <br />
-
           POLICY:
           REVIEW ≥ 0.020
           <br />
-
           BLOCK ≥ 0.700
         </div>
 
@@ -934,11 +976,9 @@ function App() {
           SUBSTRATE:
           DIGITAL NEWSPRINT
           <br />
-
           EDITION:
           BUILDATHON 2026
           <br />
-
           STATUS:
           {online
             ? "LIVE"
