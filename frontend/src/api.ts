@@ -48,3 +48,40 @@ export async function getRecentRiskResults(): Promise<
 
   return response.json();
 }
+
+export interface GraphNode {
+  id: string;
+  attributes: {
+    node_type?: string;
+    entity_id?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  attributes: {
+    relation?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface GraphSnapshot {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export async function getGraph(): Promise<GraphSnapshot> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/graph`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to load payment graph",
+    );
+  }
+
+  return response.json();
+}

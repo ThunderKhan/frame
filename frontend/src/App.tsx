@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 
 import {
   type FrameStats,
+  type GraphSnapshot,
   type RecentRiskResult,
+  getGraph,
   getRecentRiskResults,
   getStats,
 } from "./api";
+
+import { PaymentGraph } from "./PaymentGraph";
 
 import "./App.css";
 
@@ -26,20 +30,31 @@ function App() {
   const [recent, setRecent] =
     useState<RecentRiskResult[]>([]);
 
+  const [graph, setGraph] =
+    useState<GraphSnapshot>({
+      nodes: [],
+      edges: [],
+    });
+
   const [online, setOnline] =
     useState(false);
 
   useEffect(() => {
     async function refresh() {
       try {
-        const [nextStats, nextRecent] =
-          await Promise.all([
-            getStats(),
-            getRecentRiskResults(),
-          ]);
+        const [
+          nextStats,
+          nextRecent,
+          nextGraph,
+        ] = await Promise.all([
+          getStats(),
+          getRecentRiskResults(),
+          getGraph(),
+        ]);
 
         setStats(nextStats);
         setRecent(nextRecent);
+        setGraph(nextGraph);
         setOnline(true);
       } catch {
         setOnline(false);
@@ -63,9 +78,14 @@ function App() {
       <header className="header">
         <div>
           <p className="eyebrow">FRAME</p>
-          <h1>Fraud Risk Command Center</h1>
+
+          <h1>
+            Fraud Risk Command Center
+          </h1>
+
           <p className="subtitle">
-            Explainable graph intelligence for coordinated payment abuse.
+            Explainable graph intelligence
+            for coordinated payment abuse.
           </p>
         </div>
 
@@ -77,6 +97,7 @@ function App() {
                 : "status-dot offline"
             }
           />
+
           {online
             ? "Risk engine online"
             : "Risk engine offline"}
@@ -86,7 +107,9 @@ function App() {
       <section className="hero-grid">
         <MetricCard
           label="Transactions scored"
-          value={stats.transactions_scored}
+          value={
+            stats.transactions_scored
+          }
         />
 
         <MetricCard
@@ -111,14 +134,18 @@ function App() {
             Network intelligence
           </p>
 
-          <h2>Payment relationship graph</h2>
+          <h2>
+            Payment relationship graph
+          </h2>
 
-          <div className="empty-state">
+          <div className="graph-meta">
             {stats.graph_nodes} nodes ·{" "}
             {stats.graph_edges} edges
-            <br />
-            Graph visualization coming next.
           </div>
+
+          <PaymentGraph
+            graph={graph}
+          />
         </article>
 
         <article className="panel">
@@ -126,7 +153,9 @@ function App() {
             Live decisions
           </p>
 
-          <h2>Recent risk activity</h2>
+          <h2>
+            Recent risk activity
+          </h2>
 
           <div className="decision-list">
             {recent.length === 0 ? (
@@ -140,17 +169,22 @@ function App() {
                 .map((result) => (
                   <div
                     className="decision"
-                    key={result.transaction_id}
+                    key={
+                      result.transaction_id
+                    }
                   >
                     <div>
                       <strong>
-                        {result.transaction_id}
+                        {
+                          result.transaction_id
+                        }
                       </strong>
 
                       <span className="risk-score">
                         Risk{" "}
                         {(
-                          result.risk_score * 100
+                          result.risk_score *
+                          100
                         ).toFixed(1)}
                         %
                       </span>
