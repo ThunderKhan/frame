@@ -299,9 +299,15 @@ def score_transaction(
         request.to_transaction()
     )
 
-    result = engine.score(
-        transaction
-    )
+    try:
+        result = engine.score(
+            transaction
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
 
     return serialize_risk_detail(
         result,
