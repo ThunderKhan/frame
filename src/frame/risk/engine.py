@@ -54,9 +54,9 @@ class RiskEngine:
             RiskResult
         ] = []
 
-        #  * Keep the scored transaction context so
-        #  * investigation endpoints can map a decision
-        #  * back to graph entities.
+        # Keep the scored transaction context so
+        # investigation endpoints can map a decision
+        # back to graph entities.
         self.transactions: dict[
             str,
             Transaction,
@@ -66,6 +66,15 @@ class RiskEngine:
         self,
         transaction: Transaction,
     ) -> RiskResult:
+        if (
+            transaction.transaction_id
+            in self.transactions
+        ):
+            raise ValueError(
+                "duplicate transaction_id: "
+                f"{transaction.transaction_id}"
+            )
+
         graph_features = (
             extract_online_graph_features(
                 transaction,
