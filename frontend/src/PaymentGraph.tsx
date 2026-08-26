@@ -137,14 +137,6 @@ function buildSuspiciousInfrastructure(
         node.id,
       ) ?? 0;
 
-    /*
-     * This is an observed graph property,
-     * not model attribution.
-     *
-     * A device/IP with degree >= 2 has
-     * already been observed across more
-     * than one customer relationship.
-     */
     if (
       (
         nodeType ===
@@ -301,8 +293,11 @@ function drawBackingPlate(
     | "right",
   background: string,
 ) {
-  const horizontalPadding = 4;
-  const verticalPadding = 3;
+  const horizontalPadding =
+    4;
+
+  const verticalPadding =
+    3;
 
   const plateX =
     align === "left"
@@ -322,7 +317,7 @@ function drawBackingPlate(
     background;
 
   context.globalAlpha =
-    0.88;
+    0.9;
 
   context.fillRect(
     plateX,
@@ -357,13 +352,6 @@ function drawSuspiciousLabel(
     node.node_type ??
     "entity";
 
-  /*
-   * Device labels live to the LEFT.
-   * IP labels live to the RIGHT.
-   *
-   * This deliberately separates the two
-   * highest-value labels in the fraud ring.
-   */
   const labelOnLeft =
     nodeType ===
     "device";
@@ -385,14 +373,8 @@ function drawSuspiciousLabel(
     direction *
       (
         radius +
-        11
+        18
       );
-
-  const primaryY =
-    y - 3;
-
-  const secondaryY =
-    y + 9;
 
   const primary =
     nodeType ===
@@ -403,65 +385,29 @@ function drawSuspiciousLabel(
         ? "SHARED IP"
         : "SHARED INFRA";
 
-  const secondary =
-    abbreviatedEntityLabel(
-      node,
-    );
-
-  const primarySize =
+  const fontSize =
     Math.max(
-      3.4,
+      3.6,
       11 /
         globalScale,
     );
 
-  const secondarySize =
-    Math.max(
-      2.7,
-      8 /
-        globalScale,
-    );
-
-  context.textAlign =
-    textAlign;
-
-  context.textBaseline =
-    "middle";
-
   context.font =
-    `800 ${primarySize}px ` +
+    `800 ${fontSize}px ` +
     `"JetBrains Mono", ` +
     `Consolas, monospace`;
 
-  const primaryWidth =
+  const width =
     context.measureText(
       primary,
     ).width;
 
-  context.font =
-    `700 ${secondarySize}px ` +
-    `"JetBrains Mono", ` +
-    `Consolas, monospace`;
-
-  const secondaryWidth =
-    context.measureText(
-      secondary,
-    ).width;
-
-  const plateWidth =
-    Math.max(
-      primaryWidth,
-      secondaryWidth,
-    );
-
   drawBackingPlate(
     context,
     labelX,
-    y + 3,
-    plateWidth,
-    primarySize +
-      secondarySize +
-      10,
+    y,
+    width,
+    fontSize + 2,
     textAlign,
     colors.graphBackground,
   );
@@ -472,32 +418,13 @@ function drawSuspiciousLabel(
   context.textBaseline =
     "middle";
 
-  context.font =
-    `800 ${primarySize}px ` +
-    `"JetBrains Mono", ` +
-    `Consolas, monospace`;
-
   context.fillStyle =
     colors.red;
 
   context.fillText(
     primary,
     labelX,
-    primaryY,
-  );
-
-  context.font =
-    `700 ${secondarySize}px ` +
-    `"JetBrains Mono", ` +
-    `Consolas, monospace`;
-
-  context.fillStyle =
-    "rgba(244, 244, 240, 0.62)";
-
-  context.fillText(
-    secondary,
-    labelX,
-    secondaryY,
+    y,
   );
 }
 
@@ -827,9 +754,6 @@ export function PaymentGraph({
               node,
             );
 
-          /*
-           * SHARED DEVICE / IP
-           */
           if (
             node.suspiciousInfrastructure
           ) {
@@ -870,11 +794,6 @@ export function PaymentGraph({
           } else if (
             node.suspiciousNeighbor
           ) {
-            /*
-             * Connected customers remain
-             * monochrome but receive a
-             * clearly visible outline.
-             */
             context.beginPath();
 
             context.arc(
@@ -899,10 +818,6 @@ export function PaymentGraph({
 
             context.stroke();
           } else {
-            /*
-             * Ordinary graph context should
-             * stay visually subordinate.
-             */
             context.beginPath();
 
             context.arc(
@@ -920,11 +835,6 @@ export function PaymentGraph({
             context.fill();
           }
 
-          /*
-           * Suspicious infrastructure always
-           * gets a deliberate, non-colliding
-           * primary label.
-           */
           if (
             node.suspiciousInfrastructure
           ) {
@@ -939,10 +849,6 @@ export function PaymentGraph({
             return;
           }
 
-          /*
-           * Connected customers don't need
-           * labels until the analyst zooms in.
-           */
           if (
             node.suspiciousNeighbor &&
             globalScale >
@@ -959,10 +865,6 @@ export function PaymentGraph({
             return;
           }
 
-          /*
-           * Ordinary context labels appear
-           * only at close inspection.
-           */
           if (
             globalScale >
             4
