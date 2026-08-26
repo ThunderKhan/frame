@@ -43,6 +43,25 @@ function formatValue(
 }
 
 
+function caseStatus(
+  action: RiskDetail["action"],
+) {
+  if (
+    action === "BLOCK"
+  ) {
+    return "INTERCEPTED";
+  }
+
+  if (
+    action === "REVIEW"
+  ) {
+    return "ANALYST REVIEW";
+  }
+
+  return "OBSERVED";
+}
+
+
 function EvidenceRow({
   evidence,
   index,
@@ -137,6 +156,7 @@ export function InvestigationOverlay() {
     string | null
   >(null);
 
+
   useEffect(() => {
     async function handleDecisionClick(
       event: MouseEvent,
@@ -182,10 +202,6 @@ export function InvestigationOverlay() {
           )
           .trim();
 
-      /*
-       * Only REVIEW/BLOCK cases represent
-       * analyst investigation candidates.
-       */
       if (
         action !==
           "REVIEW" &&
@@ -438,6 +454,22 @@ export function InvestigationOverlay() {
                     2,
                     "0",
                   )}
+                </strong>
+              </div>
+
+              <div className="investigation-case-status">
+                <span>
+                  CASE STATUS
+                </span>
+
+                <strong>
+                  [
+                  {" "}
+                  {caseStatus(
+                    selected.action,
+                  )}
+                  {" "}
+                  ]
                 </strong>
               </div>
             </div>

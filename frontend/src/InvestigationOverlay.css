@@ -1,8 +1,5 @@
 /*
  * FRAME INVESTIGATION DRAWER
- *
- * The drawer intentionally uses the existing
- * FRAME theme tokens from App.css.
  */
 
 .decision-row:has(
@@ -362,6 +359,40 @@
 
   letter-spacing:
     -0.03em;
+}
+
+
+.investigation-case-status {
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content:
+    space-between;
+}
+
+
+.investigation-case-status strong {
+  color:
+    var(--red);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size:
+    clamp(
+      1rem,
+      2vw,
+      1.35rem
+    );
+
+  letter-spacing:
+    0.03em;
+
+  text-transform:
+    uppercase;
 }
 
 
