@@ -65,7 +65,6 @@ function App() {
         setStats(nextStats);
         setRecent(nextRecent);
         setGraph(nextGraph);
-
         setOnline(true);
       } catch {
         setOnline(false);
@@ -94,41 +93,109 @@ function App() {
       return;
     }
 
-    let frame = 0;
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+    const revealElements =
+      Array.from(
+        root.querySelectorAll<HTMLElement>(
+          "[data-reveal]",
+        ),
+      );
+
+    let animationFrame = 0;
+
     let currentScroll =
       window.scrollY;
+
     let targetScroll =
       window.scrollY;
 
-    const update =
-      () => {
-        targetScroll =
-          window.scrollY;
+    const update = () => {
+      targetScroll =
+        window.scrollY;
 
-        currentScroll +=
-          (targetScroll -
-            currentScroll) *
-          0.08;
+      currentScroll +=
+        (targetScroll -
+          currentScroll) *
+        0.09;
 
-        root.style.setProperty(
-          "--scroll-y",
-          `${currentScroll}`,
+      root.style.setProperty(
+        "--scroll-y",
+        `${currentScroll}`,
+      );
+
+      if (!reducedMotion) {
+        const viewportHeight =
+          window.innerHeight;
+
+        revealElements.forEach(
+          (element) => {
+            const rect =
+              element.getBoundingClientRect();
+
+            const viewportCenter =
+              viewportHeight / 2;
+
+            const elementCenter =
+              rect.top +
+              rect.height / 2;
+
+            const distance =
+              Math.abs(
+                elementCenter -
+                  viewportCenter,
+              );
+
+            const maxDistance =
+              viewportHeight * 0.75;
+
+            const progress =
+              Math.max(
+                0,
+                Math.min(
+                  1,
+                  1 -
+                    distance /
+                      maxDistance,
+                ),
+              );
+
+            element.style.setProperty(
+              "--reveal",
+              progress.toFixed(4),
+            );
+
+            const direction =
+              rect.top <
+              viewportCenter
+                ? -1
+                : 1;
+
+            element.style.setProperty(
+              "--reveal-direction",
+              `${direction}`,
+            );
+          },
         );
+      }
 
-        frame =
-          window.requestAnimationFrame(
-            update,
-          );
-      };
+      animationFrame =
+        window.requestAnimationFrame(
+          update,
+        );
+    };
 
-    frame =
+    animationFrame =
       window.requestAnimationFrame(
         update,
       );
 
     return () => {
       window.cancelAnimationFrame(
-        frame,
+        animationFrame,
       );
     };
   }, []);
@@ -248,7 +315,10 @@ function App() {
         </aside>
       </section>
 
-      <section className="manifest-section">
+      <section
+        className="manifest-section"
+        data-reveal
+      >
         <div className="section-index">
           [ 00 / THESIS ]
         </div>
@@ -275,6 +345,7 @@ function App() {
       <section
         className="network-section"
         id="network"
+        data-reveal
       >
         <header className="section-heading">
           <div>
@@ -312,17 +383,9 @@ function App() {
 
         <div className="graph-stage">
           <div className="graph-registration">
-            <span>
-              + 001
-            </span>
-
-            <span>
-              FRAME™
-            </span>
-
-            <span>
-              + NET
-            </span>
+            <span>+ 001</span>
+            <span>FRAME™</span>
+            <span>+ NET</span>
           </div>
 
           {loading ? (
@@ -349,7 +412,10 @@ function App() {
         </div>
       </section>
 
-      <section className="operations-grid">
+      <section
+        className="operations-grid"
+        data-reveal
+      >
         <article className="ledger-panel">
           <header className="panel-header">
             <span>
@@ -358,9 +424,7 @@ function App() {
             </span>
 
             <span>
-              {recent.length}
-              {" "}
-              ENTRIES
+              {recent.length} ENTRIES
             </span>
           </header>
 
@@ -430,19 +494,16 @@ function App() {
 
           <SignalRow
             label="AVG RISK"
-            value={
-              `${(
-                stats.average_risk_score *
-                100
-              ).toFixed(1)}%`
-            }
+            value={`${(
+              stats.average_risk_score *
+              100
+            ).toFixed(1)}%`}
           />
 
           {latestDecision && (
             <div className="active-signal glass-sheet">
               <p>
-                [ LATEST
-                DECISION ]
+                [ LATEST DECISION ]
               </p>
 
               <strong>
@@ -462,7 +523,10 @@ function App() {
         </aside>
       </section>
 
-      <footer className="colophon">
+      <footer
+        className="colophon"
+        data-reveal
+      >
         <div>
           FRAME™ ///
           FRAUD RING ANALYSIS
@@ -487,11 +551,9 @@ function App() {
           BUILDATHON 2026
           <br />
           STATUS:
-          {
-            online
-              ? "LIVE"
-              : "OFFLINE"
-          }
+          {online
+            ? "LIVE"
+            : "OFFLINE"}
         </div>
       </footer>
     </main>
@@ -535,13 +597,9 @@ function ManifestRow({
         {number}
       </span>
 
-      <h3>
-        {title}
-      </h3>
+      <h3>{title}</h3>
 
-      <p>
-        {body}
-      </p>
+      <p>{body}</p>
     </article>
   );
 }
@@ -578,9 +636,7 @@ function DecisionRow({
       <strong
         className={`decision-action ${result.action.toLowerCase()}`}
       >
-        [
-        {result.action}
-        ]
+        [{result.action}]
       </strong>
     </div>
   );
@@ -599,9 +655,7 @@ function SignalRow({
 }: SignalRowProps) {
   return (
     <div className="signal-row">
-      <span>
-        {label}
-      </span>
+      <span>{label}</span>
 
       <strong>
         {typeof value ===

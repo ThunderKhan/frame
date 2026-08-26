@@ -1160,3 +1160,273 @@ reduce) {
     transition: none;
   }
 }
+
+/* =========================================
+   BIDIRECTIONAL SCROLL REVEALS
+   ========================================= */
+
+[data-reveal] {
+  --reveal: 0;
+  --reveal-direction: 1;
+
+  opacity:
+    calc(
+      0.28 +
+      var(--reveal) * 0.72
+    );
+
+  transform:
+    translateY(
+      calc(
+        (
+          1 -
+          var(--reveal)
+        ) *
+        var(--reveal-direction) *
+        42px
+      )
+    )
+    scale(
+      calc(
+        0.975 +
+        var(--reveal) *
+        0.025
+      )
+    );
+
+  transform-origin:
+    center center;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+/* Different motion planes */
+
+.manifest-section {
+  transform:
+    translateY(
+      calc(
+        (
+          1 -
+          var(--reveal, 1)
+        ) *
+        var(
+          --reveal-direction,
+          1
+        ) *
+        26px
+      )
+    );
+}
+
+.network-section
+.section-heading {
+  transform:
+    translateX(
+      calc(
+        (
+          1 -
+          var(--reveal, 1)
+        ) *
+        -36px
+      )
+    );
+
+  opacity:
+    calc(
+      0.4 +
+      var(--reveal, 1) *
+      0.6
+    );
+}
+
+.network-section
+.section-meta {
+  transform:
+    translateX(
+      calc(
+        (
+          1 -
+          var(--reveal, 1)
+        ) *
+        28px
+      )
+    );
+}
+
+.graph-stage {
+  transform:
+    scale(
+      calc(
+        0.985 +
+        var(--reveal, 1) *
+        0.015
+      )
+    );
+
+  transform-origin:
+    center center;
+}
+
+.operations-grid {
+  transform:
+    translateY(
+      calc(
+        (
+          1 -
+          var(--reveal, 1)
+        ) *
+        var(
+          --reveal-direction,
+          1
+        ) *
+        34px
+      )
+    );
+}
+
+/* Floating telemetry gets its own slower parallax plane */
+
+.floating-status {
+  transform:
+    translateY(
+      calc(
+        var(--scroll-y) *
+        -0.012px
+      )
+    );
+}
+
+/* Mechanical hover / micro-interaction */
+
+.meta-row,
+.signal-row {
+  transition:
+    background-color 90ms linear,
+    color 90ms linear,
+    padding-left 90ms linear;
+}
+
+.meta-row:hover,
+.signal-row:hover {
+  padding-left: 22px;
+
+  color:
+    var(--paper);
+
+  background:
+    var(--ink);
+}
+
+.meta-row:hover strong,
+.signal-row:hover strong {
+  color:
+    var(--red);
+}
+
+/* Manifest rows react to pointer */
+
+.manifest-row {
+  position: relative;
+
+  transition:
+    padding-left 110ms linear,
+    background-color 110ms linear;
+}
+
+.manifest-row::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: 3px;
+  height: 0;
+
+  background:
+    var(--red);
+
+  transition:
+    height 110ms linear;
+}
+
+.manifest-row:hover {
+  padding-left: 14px;
+}
+
+.manifest-row:hover::after {
+  height: 100%;
+}
+
+/* Graph focus interaction */
+
+.graph-stage {
+  transition:
+    outline-color 100ms linear;
+}
+
+.graph-stage:hover {
+  outline:
+    1px solid var(--red);
+
+  outline-offset:
+    -1px;
+}
+
+/* Hero CTA mechanical arrow response */
+
+.hero-action::before {
+  content: "";
+
+  display: inline-block;
+
+  width: 0;
+
+  transition:
+    width 100ms linear;
+}
+
+.hero-action:hover::before {
+  width: 8px;
+}
+
+/* Better easing for anchor jumps */
+
+@media
+(prefers-reduced-motion:
+no-preference) {
+  html {
+    scroll-behavior:
+      smooth;
+  }
+}
+
+/* Reduced motion */
+
+@media
+(prefers-reduced-motion:
+reduce) {
+  [data-reveal],
+  .network-section
+  .section-heading,
+  .network-section
+  .section-meta,
+  .graph-stage,
+  .operations-grid,
+  .floating-status {
+    opacity: 1;
+    transform: none;
+  }
+
+  .meta-row,
+  .signal-row,
+  .manifest-row,
+  .manifest-row::after,
+  .hero-action::before {
+    transition: none;
+  }
+}
