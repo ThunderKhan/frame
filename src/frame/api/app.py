@@ -52,6 +52,59 @@ def health() -> dict[str, str]:
         "service": "frame-risk-api",
     }
 
+@app.get("/api/v1/stats")
+def get_stats() -> dict[str, object]:
+    if risk_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="risk engine unavailable",
+        )
+
+    results = risk_engine.results
+
+    allowed = sum(
+        result.action.value == "ALLOW"
+        for result in results
+    )
+
+    reviewed = sum(
+        result.action.value == "REVIEW"
+        for result in results
+    )
+
+    blocked = sum(
+        result.action.value == "BLOCK"
+        for result in results
+    )
+
+    average_risk = (
+        sum(
+            result.probability
+            for result in results
+        )
+        / len(results)
+        if results
+        else 0.0
+    )
+
+    return {
+        "transactions_scored": (
+            len(results)
+        ),
+        "allowed": allowed,
+        "reviewed": reviewed,
+        "blocked": blocked,
+        "average_risk_score": (
+            average_risk
+        ),
+        "graph_nodes": (
+            risk_engine.graph.number_of_nodes()
+        ),
+        "graph_edges": (
+            risk_engine.graph.number_of_edges()
+        ),
+    }
+
 @app.get("/api/v1/graph")
 def get_graph() -> dict[
     str,
