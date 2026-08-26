@@ -1,8 +1,13 @@
 import {
+  useEffect,
   useMemo,
+  useRef,
+  useState,
 } from "react";
 
-import ForceGraph2D from "react-force-graph-2d";
+import ForceGraph2D, {
+  type ForceGraphMethods,
+} from "react-force-graph-2d";
 
 import type {
   GraphEdge,
@@ -42,6 +47,11 @@ interface ThemeColors {
   red: string;
   graphBackground: string;
   graphForeground: string;
+}
+
+interface NetworkFocusEventDetail {
+  transactionId: string;
+  nodeIds: string[];
 }
 
 function endpointId(
@@ -498,6 +508,55 @@ function drawContextLabel(
 export function PaymentGraph({
   graph,
 }: PaymentGraphProps) {
+  const graphRef =
+    useRef<
+      ForceGraphMethods | undefined
+    >(
+      undefined,
+    );
+
+  const [
+    focusedNodeIds,
+    setFocusedNodeIds,
+  ] = useState<
+    Set<string>
+  >(
+    new Set(),
+  );
+
+  useEffect(() => {
+    function handleFocusNetwork(
+      event: Event,
+    ) {
+      const customEvent =
+        event as CustomEvent<
+          NetworkFocusEventDetail
+        >;
+
+      const nodeIds =
+        customEvent.detail
+          ?.nodeIds ?? [];
+
+      setFocusedNodeIds(
+        new Set(
+          nodeIds,
+        ),
+      );
+    }
+
+    window.addEventListener(
+      "frame:focus-network",
+      handleFocusNetwork,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "frame:focus-network",
+        handleFocusNetwork,
+      );
+    };
+  }, []);
+
   const graphData =
     useMemo(
       () => {
@@ -584,6 +643,113 @@ export function PaymentGraph({
       [graph],
     );
 
+  const expandedFocus =
+    useMemo(
+      () => {
+        if (
+          focusedNodeIds.size ===
+          0
+        ) {
+          return new Set<
+            string
+          >();
+        }
+
+        const focused =
+          new Set(
+            focusedNodeIds,
+          );
+
+        for (
+          const edge
+          of graph.edges
+        ) {
+          if (
+            focusedNodeIds.has(
+              edge.source,
+            )
+          ) {
+            focused.add(
+              edge.target,
+            );
+          }
+
+          if (
+            focusedNodeIds.has(
+              edge.target,
+            )
+          ) {
+            focused.add(
+              edge.source,
+            );
+          }
+        }
+
+        return focused;
+      },
+      [
+        focusedNodeIds,
+        graph.edges,
+      ],
+    );
+
+  const focusActive =
+    focusedNodeIds.size > 0;
+
+  /*
+   * Camera focus is intentionally tighter than the visual
+   * highlight. The camera frames the five entities belonging
+   * to the investigated transaction, while the one-hop
+   * neighborhood remains visible as supporting context.
+   */
+  useEffect(() => {
+    if (
+      focusedNodeIds.size ===
+      0
+    ) {
+      return;
+    }
+
+    const timeout =
+      window.setTimeout(
+        () => {
+          const forceGraph =
+            graphRef.current;
+
+          if (
+            !forceGraph
+          ) {
+            return;
+          }
+
+          forceGraph.zoomToFit(
+            900,
+            110,
+            (rawNode) => {
+              const node =
+                rawNode as RenderNode;
+
+              return (
+                focusedNodeIds.has(
+                  node.id,
+                )
+              );
+            },
+          );
+        },
+        120,
+      );
+
+    return () => {
+      window.clearTimeout(
+        timeout,
+      );
+    };
+  }, [
+    focusedNodeIds,
+    graphData,
+  ]);
+
   if (
     graphData.nodes
       .length === 0
@@ -643,6 +809,10 @@ export function PaymentGraph({
       }}
     >
       <ForceGraph2D
+        ref={
+          graphRef
+        }
+
         graphData={{
           nodes:
             graphData.nodes,
@@ -681,6 +851,38 @@ export function PaymentGraph({
           const link =
             rawLink as RenderLink;
 
+          const source =
+            endpointId(
+              link.source,
+            );
+
+          const target =
+            endpointId(
+              link.target,
+            );
+
+          if (
+            focusActive
+          ) {
+            const inFocusedContext =
+              expandedFocus.has(
+                source,
+              ) &&
+              expandedFocus.has(
+                target,
+              );
+
+            if (
+              !inFocusedContext
+            ) {
+              return (
+                "rgba(244, 244, 240, 0.025)"
+              );
+            }
+
+            return colors.red;
+          }
+
           if (
             link.suspicious
           ) {
@@ -698,6 +900,31 @@ export function PaymentGraph({
           const link =
             rawLink as RenderLink;
 
+          const source =
+            endpointId(
+              link.source,
+            );
+
+          const target =
+            endpointId(
+              link.target,
+            );
+
+          if (
+            focusActive
+          ) {
+            return (
+              expandedFocus.has(
+                source,
+              ) &&
+              expandedFocus.has(
+                target,
+              )
+                ? 2.4
+                : 0.25
+            );
+          }
+
           return (
             link.suspicious
               ? 2.2
@@ -710,6 +937,12 @@ export function PaymentGraph({
         ) => {
           const link =
             rawLink as RenderLink;
+
+          if (
+            focusActive
+          ) {
+            return 0;
+          }
 
           return (
             link.suspicious
@@ -753,6 +986,27 @@ export function PaymentGraph({
             nodeRadius(
               node,
             );
+
+          const directlyFocused =
+            focusedNodeIds.has(
+              node.id,
+            );
+
+          const inFocusedContext =
+            expandedFocus.has(
+              node.id,
+            );
+
+          if (
+            focusActive &&
+            !inFocusedContext
+          ) {
+            context.globalAlpha =
+              0.12;
+          } else {
+            context.globalAlpha =
+              1;
+          }
 
           if (
             node.suspiciousInfrastructure
@@ -833,6 +1087,32 @@ export function PaymentGraph({
               "rgba(244, 244, 240, 0.24)";
 
             context.fill();
+          }
+
+          context.globalAlpha =
+            1;
+
+          if (
+            directlyFocused
+          ) {
+            context.beginPath();
+
+            context.arc(
+              x,
+              y,
+              radius + 7,
+              0,
+              2 *
+                Math.PI,
+            );
+
+            context.strokeStyle =
+              colors.red;
+
+            context.lineWidth =
+              2.4;
+
+            context.stroke();
           }
 
           if (

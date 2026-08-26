@@ -134,6 +134,26 @@ function EvidenceRow({
 }
 
 
+function graphNodeIds(
+  result: RiskDetail,
+): string[] {
+  const entities =
+    result.entities;
+
+  if (!entities) {
+    return [];
+  }
+
+  return [
+    `customer:${entities.customer}`,
+    `device:${entities.device}`,
+    `ip:${entities.ip}`,
+    `card:${entities.card}`,
+    `merchant:${entities.merchant}`,
+  ];
+}
+
+
 export function InvestigationOverlay() {
   const [
     selected,
@@ -305,6 +325,82 @@ export function InvestigationOverlay() {
   }, []);
 
 
+  function closeInvestigation() {
+    setSelected(
+      null,
+    );
+
+    setError(
+      null,
+    );
+  }
+
+
+  function locateInNetwork() {
+    if (
+      !selected
+    ) {
+      return;
+    }
+
+    const nodeIds =
+      graphNodeIds(
+        selected,
+      );
+
+    if (
+      nodeIds.length === 0
+    ) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "frame:focus-network",
+        {
+          detail: {
+            transactionId:
+              selected.transaction_id,
+
+            nodeIds,
+          },
+        },
+      ),
+    );
+
+    closeInvestigation();
+
+    window.setTimeout(
+      () => {
+        const network =
+          document.getElementById(
+            "network",
+          );
+
+        if (!network) {
+          return;
+        }
+
+        const reducedMotion =
+          window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+
+        network.scrollIntoView({
+          behavior:
+            reducedMotion
+              ? "auto"
+              : "smooth",
+
+          block:
+            "start",
+        });
+      },
+      80,
+    );
+  }
+
+
   const visible =
     selected !== null ||
     loading ||
@@ -327,15 +423,9 @@ export function InvestigationOverlay() {
         className="investigation-backdrop"
         type="button"
         aria-label="Close investigation"
-        onClick={() => {
-          setSelected(
-            null,
-          );
-
-          setError(
-            null,
-          );
-        }}
+        onClick={
+          closeInvestigation
+        }
       />
 
       <aside
@@ -365,15 +455,9 @@ export function InvestigationOverlay() {
             className="investigation-close"
             type="button"
             aria-label="Close investigation"
-            onClick={() => {
-              setSelected(
-                null,
-              );
-
-              setError(
-                null,
-              );
-            }}
+            onClick={
+              closeInvestigation
+            }
           >
             [ X ]
           </button>
@@ -494,6 +578,29 @@ export function InvestigationOverlay() {
                 model score.
               </p>
             </div>
+
+            {selected.entities && (
+              <div className="investigation-network-action">
+                <span>
+                  [
+                  {" "}
+                  GRAPH CONTEXT
+                  {" "}
+                  ]
+                </span>
+
+                <button
+                  type="button"
+                  onClick={
+                    locateInNetwork
+                  }
+                >
+                  &gt;&gt;&gt;
+                  {" "}
+                  LOCATE IN NETWORK
+                </button>
+              </div>
+            )}
 
             <section className="investigation-evidence-list">
               <header>

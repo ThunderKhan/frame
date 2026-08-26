@@ -714,3 +714,116 @@
     animation: none;
   }
 }
+
+.investigation-network-action {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 16px 18px;
+
+  border-bottom:
+    1px solid
+    var(--ink);
+
+  background:
+    var(--panel-muted);
+}
+
+
+.investigation-network-action > span {
+  color:
+    var(--ink-soft);
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.investigation-network-action button {
+  min-height: 42px;
+
+  padding:
+    10px
+    14px;
+
+  border:
+    1px solid
+    var(--red);
+
+  border-radius: 0;
+
+  color:
+    var(--red);
+
+  background:
+    transparent;
+
+  font-family:
+    "JetBrains Mono",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 0.09em;
+
+  text-transform:
+    uppercase;
+
+  cursor: pointer;
+
+  transition:
+    color 90ms linear,
+    background-color 90ms linear;
+}
+
+
+.investigation-network-action button:hover {
+  color:
+    #f4f4f0;
+
+  background:
+    var(--red);
+}
+
+
+.investigation-network-action button:focus-visible {
+  outline:
+    2px solid
+    var(--red);
+
+  outline-offset:
+    3px;
+}
+
+
+@media (
+  max-width: 600px
+) {
+  .investigation-network-action {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+  .investigation-network-action button {
+    width: 100%;
+  }
+}

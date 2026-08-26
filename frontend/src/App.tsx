@@ -32,6 +32,68 @@ const EMPTY_STATS: FrameStats = {
   graph_edges: 0,
 };
 
+function graphSnapshotsEqual(
+  current: GraphSnapshot,
+  next: GraphSnapshot,
+): boolean {
+  if (
+    current.nodes.length !==
+      next.nodes.length ||
+    current.edges.length !==
+      next.edges.length
+  ) {
+    return false;
+  }
+
+  for (
+    let index = 0;
+    index < current.nodes.length;
+    index += 1
+  ) {
+    const currentNode =
+      current.nodes[index];
+
+    const nextNode =
+      next.nodes[index];
+
+    if (
+      currentNode.id !==
+        nextNode.id ||
+      currentNode.attributes.node_type !==
+        nextNode.attributes.node_type ||
+      currentNode.attributes.entity_id !==
+        nextNode.attributes.entity_id
+    ) {
+      return false;
+    }
+  }
+
+  for (
+    let index = 0;
+    index < current.edges.length;
+    index += 1
+  ) {
+    const currentEdge =
+      current.edges[index];
+
+    const nextEdge =
+      next.edges[index];
+
+    if (
+      currentEdge.source !==
+        nextEdge.source ||
+      currentEdge.target !==
+        nextEdge.target ||
+      currentEdge.attributes.relation !==
+        nextEdge.attributes.relation
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function App() {
   const [stats, setStats] =
     useState<FrameStats>(
@@ -119,9 +181,28 @@ function App() {
           getGraph(),
         ]);
 
-        setStats(nextStats);
-        setRecent(nextRecent);
-        setGraph(nextGraph);
+        setStats(
+          nextStats,
+        );
+
+        setRecent(
+          nextRecent,
+        );
+
+        setGraph(
+          (currentGraph) => {
+            if (
+              graphSnapshotsEqual(
+                currentGraph,
+                nextGraph,
+              )
+            ) {
+              return currentGraph;
+            }
+
+            return nextGraph;
+          },
+        );
 
         setOnline(true);
       } catch {

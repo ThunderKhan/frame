@@ -22,13 +22,24 @@ export interface RiskEvidence {
 }
 
 
+export interface RiskEntities {
+  customer: string;
+  device: string;
+  ip: string;
+  card: string;
+  merchant: string;
+}
+
+
 export interface RecentRiskResult {
   transaction_id: string;
   risk_score: number;
+
   action:
     | "ALLOW"
     | "REVIEW"
     | "BLOCK";
+
   evidence_count: number;
 }
 
@@ -36,6 +47,8 @@ export interface RecentRiskResult {
 export interface RiskDetail
   extends RecentRiskResult {
   evidence: RiskEvidence[];
+
+  entities?: RiskEntities;
 }
 
 
