@@ -14,12 +14,14 @@ from frame.api.graph import (
 from frame.api.runtime import (
     build_risk_engine,
 )
+from frame.api.schemas import (
+    RiskScoreRequest,
+)
 from frame.domain.transaction import (
     Transaction,
 )
 from frame.risk.engine import RiskEngine
 from frame.risk.result import RiskResult
-
 
 risk_engine: RiskEngine | None = None
 
@@ -289,9 +291,13 @@ def get_risk_result(
 
 @app.post("/api/v1/risk/score")
 def score_transaction(
-    transaction: Transaction,
+    request: RiskScoreRequest,
 ) -> dict[str, object]:
     engine = require_engine()
+
+    transaction = (
+        request.to_transaction()
+    )
 
     result = engine.score(
         transaction
