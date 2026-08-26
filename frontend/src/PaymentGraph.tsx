@@ -524,6 +524,15 @@ export function PaymentGraph({
     new Set(),
   );
 
+  const [
+    focusedTransactionId,
+    setFocusedTransactionId,
+  ] = useState<
+    string | null
+  >(
+    null,
+  );
+
   useEffect(() => {
     function handleFocusNetwork(
       event: Event,
@@ -541,6 +550,11 @@ export function PaymentGraph({
         new Set(
           nodeIds,
         ),
+      );
+
+      setFocusedTransactionId(
+        customEvent.detail
+          ?.transactionId ?? null,
       );
     }
 
@@ -749,6 +763,35 @@ export function PaymentGraph({
     focusedNodeIds,
     graphData,
   ]);
+
+  function clearFocus() {
+    setFocusedNodeIds(
+      new Set(),
+    );
+
+    setFocusedTransactionId(
+      null,
+    );
+
+    window.setTimeout(
+      () => {
+        const forceGraph =
+          graphRef.current;
+
+        if (
+          !forceGraph
+        ) {
+          return;
+        }
+
+        forceGraph.zoomToFit(
+          700,
+          80,
+        );
+      },
+      40,
+    );
+  }
 
   if (
     graphData.nodes
@@ -1256,6 +1299,137 @@ export function PaymentGraph({
           );
         }}
       />
+
+      {focusActive && (
+        <div
+          style={{
+            position:
+              "absolute",
+
+            right:
+              "18px",
+
+            top:
+              "18px",
+
+            zIndex:
+              6,
+
+            minWidth:
+              "250px",
+
+            padding:
+              "14px",
+
+            border:
+              "1px solid rgba(244,244,240,0.45)",
+
+            color:
+              colors.graphForeground,
+
+            background:
+              "rgba(5,5,5,0.88)",
+
+            backdropFilter:
+              "blur(10px)",
+
+            fontFamily:
+              '"JetBrains Mono", Consolas, monospace',
+
+            fontSize:
+              "10px",
+
+            fontWeight:
+              700,
+
+            letterSpacing:
+              "0.08em",
+
+            textTransform:
+              "uppercase",
+          }}
+        >
+          <div
+            style={{
+              color:
+                colors.red,
+
+              marginBottom:
+                "8px",
+            }}
+          >
+            [
+            {" "}
+            CASE FOCUS
+            {" "}
+            ]
+          </div>
+
+          <div
+            style={{
+              marginBottom:
+                "12px",
+
+              opacity:
+                0.78,
+
+              wordBreak:
+                "break-all",
+            }}
+          >
+            {focusedTransactionId ??
+              "SELECTED TRANSACTION"}
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              clearFocus
+            }
+            style={{
+              width:
+                "100%",
+
+              padding:
+                "10px 12px",
+
+              border:
+                `1px solid ${colors.red}`,
+
+              borderRadius:
+                0,
+
+              color:
+                colors.red,
+
+              background:
+                "transparent",
+
+              fontFamily:
+                '"JetBrains Mono", Consolas, monospace',
+
+              fontSize:
+                "10px",
+
+              fontWeight:
+                900,
+
+              letterSpacing:
+                "0.08em",
+
+              textTransform:
+                "uppercase",
+
+              cursor:
+                "pointer",
+            }}
+          >
+            &gt;&gt;&gt;
+            {" "}
+            CLEAR FOCUS
+          </button>
+        </div>
+      )}
 
       <div
         style={{
