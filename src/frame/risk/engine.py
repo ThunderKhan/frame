@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 import networkx as nx
 import numpy as np
@@ -50,6 +51,10 @@ class RiskEngine:
             )
         )
 
+        self.latest_timestamp: (
+            datetime | None
+        ) = None
+
         self.results: list[
             RiskResult
         ] = []
@@ -72,6 +77,17 @@ class RiskEngine:
         ):
             raise ValueError(
                 "duplicate transaction_id: "
+                f"{transaction.transaction_id}"
+            )
+
+        if (
+            self.latest_timestamp
+            is not None
+            and transaction.timestamp
+            < self.latest_timestamp
+        ):
+            raise ValueError(
+                "out-of-order transaction timestamp: "
                 f"{transaction.transaction_id}"
             )
 
@@ -135,5 +151,9 @@ class RiskEngine:
         self.transactions[
             transaction.transaction_id
         ] = transaction
+
+        self.latest_timestamp = (
+            transaction.timestamp
+        )
 
         return result
