@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -176,6 +178,90 @@ export function InvestigationOverlay() {
     string | null
   >(null);
 
+  const [
+    closing,
+    setClosing,
+  ] = useState(
+    false,
+  );
+
+  const closeTimerRef =
+    useRef<
+      number | null
+    >(null);
+
+
+  const closeInvestigation =
+    useCallback(
+      () => {
+        if (closing) {
+          return;
+        }
+
+        setClosing(
+          true,
+        );
+
+        if (
+          closeTimerRef.current
+          !== null
+        ) {
+          window.clearTimeout(
+            closeTimerRef.current,
+          );
+        }
+
+        const reducedMotion =
+          window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+
+        closeTimerRef.current =
+          window.setTimeout(
+            () => {
+              setSelected(
+                null,
+              );
+
+              setError(
+                null,
+              );
+
+              setLoading(
+                false,
+              );
+
+              setClosing(
+                false,
+              );
+
+              closeTimerRef.current =
+                null;
+            },
+            reducedMotion
+              ? 0
+              : 180,
+          );
+      },
+      [
+        closing,
+      ],
+    );
+
+
+  useEffect(() => {
+    return () => {
+      if (
+        closeTimerRef.current
+        !== null
+      ) {
+        window.clearTimeout(
+          closeTimerRef.current,
+        );
+      }
+    };
+  }, []);
+
 
   useEffect(() => {
     async function handleDecisionClick(
@@ -247,6 +333,22 @@ export function InvestigationOverlay() {
         return;
       }
 
+      if (
+        closeTimerRef.current
+        !== null
+      ) {
+        window.clearTimeout(
+          closeTimerRef.current,
+        );
+
+        closeTimerRef.current =
+          null;
+      }
+
+      setClosing(
+        false,
+      );
+
       setLoading(
         true,
       );
@@ -301,13 +403,7 @@ export function InvestigationOverlay() {
         event.key ===
         "Escape"
       ) {
-        setSelected(
-          null,
-        );
-
-        setError(
-          null,
-        );
+        closeInvestigation();
       }
     }
 
@@ -322,18 +418,9 @@ export function InvestigationOverlay() {
         handleKeyDown,
       );
     };
-  }, []);
-
-
-  function closeInvestigation() {
-    setSelected(
-      null,
-    );
-
-    setError(
-      null,
-    );
-  }
+  }, [
+    closeInvestigation,
+  ]);
 
 
   function locateInNetwork() {
@@ -396,7 +483,7 @@ export function InvestigationOverlay() {
             "start",
         });
       },
-      80,
+      200,
     );
   }
 
@@ -416,7 +503,11 @@ export function InvestigationOverlay() {
 
   return (
     <div
-      className="investigation-layer"
+      className={
+        closing
+          ? "investigation-layer closing"
+          : "investigation-layer"
+      }
       role="presentation"
     >
       <button
