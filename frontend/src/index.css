@@ -1,15 +1,24 @@
 html {
   min-width: 320px;
+
+  overflow-x: hidden;
+
   background: #f4f4f0;
 }
 
 body {
+  margin: 0;
+
   min-width: 320px;
   min-height: 100vh;
+
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+
+  overflow-x: hidden;
 }
 
 ::selection {
