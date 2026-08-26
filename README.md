@@ -45,60 +45,23 @@ The model does **not** directly authorize payments.
 
 The final policy is deterministic:
 
-| Risk score | Decision |
-| --- | --- |
-| `< 0.020` | ALLOW |
-| `0.020 – 0.699` | REVIEW |
-| `>= 0.700` | BLOCK |
+| Risk score      | Decision |
+| --------------- | -------- |
+| `< 0.020`       | ALLOW    |
+| `0.020 – 0.699` | REVIEW   |
+| `>= 0.700`      | BLOCK    |
 
 ---
 
 ## Architecture
 
-```text
-Incoming Transaction
-        |
-        v
-+-----------------------+
-| Current Payment Graph |
-+-----------------------+
-        |
-        +----> Graph Features
-        |
-        v
-+-----------------------+
-| 30-Min Temporal State |
-+-----------------------+
-        |
-        +----> Temporal Features
-        |
-        v
-+-----------------------+
-| Online Feature Vector |
-+-----------------------+
-        |
-        v
-+-----------------------+
-| Calibrated ML Model   |
-+-----------------------+
-        |
-        v
-     Risk Score
-        |
-        v
-+-----------------------+
-| Deterministic Policy  |
-| ALLOW/REVIEW/BLOCK    |
-+-----------------------+
-        |
-        +----> Observed Network Evidence
-        |
-        v
-+-----------------------+
-| Live Graph + Analyst  |
-| Investigation UI      |
-+-----------------------+
-````
+<p align="center">
+  <img
+    src="assets/frame-architecture.png"
+    alt="FRAME system architecture"
+    width="100%"
+  />
+</p>
 
 ---
 
@@ -108,11 +71,11 @@ FRAME represents payment activity as an undirected graph.
 
 ### Node types
 
-* customer
-* card
-* device
-* IP address
-* merchant
+- customer
+- card
+- device
+- IP address
+- merchant
 
 ### Example
 
@@ -138,25 +101,25 @@ The current model uses 13 online features.
 
 ### Transaction context
 
-* amount
-* account age
+- amount
+- account age
 
 ### Graph structure
 
-* customer degree
-* card degree
-* device degree
-* merchant degree
-* connected-component size
+- customer degree
+- card degree
+- device degree
+- merchant degree
+- connected-component size
 
 ### 30-minute temporal activity
 
-* device transaction count
-* IP transaction count
-* customer transaction count
-* unique customers per device
-* unique customers per IP
-* unique merchants per device
+- device transaction count
+- IP transaction count
+- customer transaction count
+- unique customers per device
+- unique customers per IP
+- unique merchants per device
 
 The production online feature schema intentionally does not use lifetime IP degree. IP behavior remains represented through short-window temporal features.
 
@@ -176,10 +139,10 @@ CalibratedClassifierCV
 
 Configuration:
 
-* logistic regression with balanced class weights
-* maximum 2,000 iterations
-* sigmoid probability calibration
-* 5-fold calibration
+- logistic regression with balanced class weights
+- maximum 2,000 iterations
+- sigmoid probability calibration
+- 5-fold calibration
 
 FRAME currently does **not** use a GNN, neural network, or LLM for transaction scoring.
 
@@ -193,15 +156,15 @@ FRAME separates **risk scoring** from **analyst evidence**.
 
 Evidence represents observed graph or temporal facts such as:
 
-* shared device
-* shared IP
-* device burst
-* IP burst
-* customer burst
-* multiple customers using one device
-* multiple customers using one IP
-* one device interacting with multiple merchants
-* unusually large connected component
+- shared device
+- shared IP
+- device burst
+- IP burst
+- customer burst
+- multiple customers using one device
+- multiple customers using one IP
+- one device interacting with multiple merchants
+- unusually large connected component
 
 These signals are **not feature attributions**.
 
@@ -215,12 +178,12 @@ FRAME currently uses a controlled synthetic benchmark containing both coordinate
 
 The benchmark includes:
 
-* 5,000 legitimate transactions
-* 96 planted fraud transactions
-* 3 coordinated fraud rings
-* shared-IP benign groups
-* shared-device benign groups
-* fraud interleaved chronologically with legitimate traffic
+- 5,000 legitimate transactions
+- 96 planted fraud transactions
+- 3 coordinated fraud rings
+- shared-IP benign groups
+- shared-device benign groups
+- fraud interleaved chronologically with legitimate traffic
 
 ### Locked hard-negative test results
 
@@ -255,11 +218,11 @@ Fraud outcomes:
 
 This corresponds to:
 
-* **95.83%** of planted fraud intercepted through REVIEW or BLOCK
-* **83.33%** of planted fraud blocked
-* **4.17%** of planted fraud allowed
-* **0%** of legitimate transactions blocked
-* **4.48%** of legitimate transactions sent to review
+- **95.83%** of planted fraud intercepted through REVIEW or BLOCK
+- **83.33%** of planted fraud blocked
+- **4.17%** of planted fraud allowed
+- **0%** of legitimate transactions blocked
+- **4.48%** of legitimate transactions sent to review
 
 All results above are from a **synthetic hard-negative benchmark** and should not be interpreted as production or real-world fraud-detection performance.
 
@@ -269,8 +232,8 @@ All results above are from a **synthetic hard-negative benchmark** and should no
 
 In the locked graph-backed ring evaluation:
 
-* all **3 / 3 planted fraud rings** were detected with graph-backed evidence
-* average fraud transaction position at which graph-backed evidence emerged: **2.33**
+- all **3 / 3 planted fraud rings** were detected with graph-backed evidence
+- average fraud transaction position at which graph-backed evidence emerged: **2.33**
 
 This demonstrates the central FRAME hypothesis within the synthetic environment:
 
@@ -368,12 +331,12 @@ Training labels such as `is_fraud` and `fraud_ring_id` are intentionally not par
 
 The current API includes several protections for its stateful online scoring engine:
 
-* duplicate transaction IDs are rejected
-* out-of-order timestamps are rejected
-* scoring mutations are serialized with a lock
-* graph and result reads use thread-safe snapshots
-* public scoring input is separated from training-label schemas
-* recent-result query size is bounded
+- duplicate transaction IDs are rejected
+- out-of-order timestamps are rejected
+- scoring mutations are serialized with a lock
+- graph and result reads use thread-safe snapshots
+- public scoring input is separated from training-label schemas
+- recent-result query size is bounded
 
 The current prototype keeps online graph and temporal state in memory, so server restarts reset runtime state.
 
@@ -383,26 +346,26 @@ The current prototype keeps online graph and temporal state in memory, so server
 
 ### Backend
 
-* Python
-* FastAPI
-* Pydantic
-* NetworkX
-* NumPy
-* scikit-learn
+- Python
+- FastAPI
+- Pydantic
+- NetworkX
+- NumPy
+- scikit-learn
 
 ### Frontend
 
-* React
-* TypeScript
-* Vite
-* react-force-graph-2d
+- React
+- TypeScript
+- Vite
+- react-force-graph-2d
 
 ### ML
 
-* graph-derived features
-* temporal-window features
-* logistic regression
-* probability calibration
+- graph-derived features
+- temporal-window features
+- logistic regression
+- probability calibration
 
 ---
 
@@ -465,23 +428,23 @@ FRAME is currently a prototype and research-oriented demonstration.
 
 It is designed to explore:
 
-* coordinated payment-abuse detection
-* graph-based fraud context
-* online temporal risk features
-* explainable analyst workflows
-* deterministic risk-policy integration
+- coordinated payment-abuse detection
+- graph-based fraud context
+- online temporal risk features
+- explainable analyst workflows
+- deterministic risk-policy integration
 
 It is **not** presented as a production-ready fraud engine.
 
 Future work may include:
 
-* evaluation on public or anonymized real-world datasets
-* richer graph-learning baselines
-* persistent graph/state storage
-* adaptive temporal windows
-* merchant-specific calibration
-* analyst feedback loops
-* optional LLM-generated summaries of already-computed evidence
+- evaluation on public or anonymized real-world datasets
+- richer graph-learning baselines
+- persistent graph/state storage
+- adaptive temporal windows
+- merchant-specific calibration
+- analyst feedback loops
+- optional LLM-generated summaries of already-computed evidence
 
 Any future LLM component would summarize existing evidence only and would not independently authorize or block transactions.
 
