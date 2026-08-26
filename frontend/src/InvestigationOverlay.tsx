@@ -423,6 +423,74 @@ export function InvestigationOverlay() {
   ]);
 
 
+  useEffect(() => {
+    const visible =
+      selected !== null ||
+      loading ||
+      error !== null;
+
+    if (!visible) {
+      return;
+    }
+
+    const body =
+      document.body;
+
+    const root =
+      document.documentElement;
+
+    const previousBodyOverflow =
+      body.style.overflow;
+
+    const previousBodyPaddingRight =
+      body.style.paddingRight;
+
+    const previousRootOverflow =
+      root.style.overflow;
+
+    const previousOverscrollBehavior =
+      body.style.overscrollBehavior;
+
+    const scrollbarWidth =
+      window.innerWidth -
+      root.clientWidth;
+
+    body.style.overflow =
+      "hidden";
+
+    root.style.overflow =
+      "hidden";
+
+    body.style.overscrollBehavior =
+      "none";
+
+    if (
+      scrollbarWidth > 0
+    ) {
+      body.style.paddingRight =
+        `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      body.style.overflow =
+        previousBodyOverflow;
+
+      body.style.paddingRight =
+        previousBodyPaddingRight;
+
+      root.style.overflow =
+        previousRootOverflow;
+
+      body.style.overscrollBehavior =
+        previousOverscrollBehavior;
+    };
+  }, [
+    selected,
+    loading,
+    error,
+  ]);
+
+
   function locateInNetwork() {
     if (
       !selected

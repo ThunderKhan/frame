@@ -13,6 +13,7 @@ import {
 } from "./InvestigationOverlay.tsx";
 
 import "./index.css";
+import "./mobile.css";
 
 
 createRoot(

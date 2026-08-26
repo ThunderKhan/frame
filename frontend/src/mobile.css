@@ -1,0 +1,525 @@
+/*
+ * FRAME MOBILE ADAPTATION LAYER
+ * Loaded after App.css, InvestigationOverlay.css, and index.css.
+ * Keeps desktop styling intact while making the dashboard usable on phones.
+ */
+
+@media (max-width: 900px) {
+  /* Mobile should prioritize stability over scroll choreography. */
+  [data-reveal],
+  .network-section .section-heading,
+  .network-section .section-meta,
+  .floating-status {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .register-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .register-strip > span,
+  .register-strip > .register-control {
+    min-width: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .register-control {
+    grid-column: 1 / -1;
+  }
+
+  .hero-section {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy {
+    border-right: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .hero-forensics {
+    padding: 20px;
+  }
+
+  .story-grid,
+  .operations-grid,
+  .colophon {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-stage,
+  .graph-stage .graph-container,
+  .graph-skeleton {
+    min-height: 520px;
+    height: 520px;
+  }
+
+  .floating-status {
+    right: 16px;
+    bottom: 16px;
+    width: 190px;
+  }
+}
+
+@media (max-width: 600px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app-shell {
+    width: 100%;
+  }
+
+  /* -----------------------------
+     Register / top status strip
+     ----------------------------- */
+
+  .register-strip {
+    grid-template-columns: 1fr;
+    font-size: 10px;
+    letter-spacing: 0.055em;
+  }
+
+  .register-strip > span,
+  .register-strip > .register-control {
+    min-height: 42px;
+    padding: 9px 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .register-strip > span:nth-child(2),
+  .register-strip > span:nth-child(3) {
+    display: none;
+  }
+
+  .register-control {
+    grid-column: auto;
+    gap: 10px;
+  }
+
+  .engine-state {
+    font-size: 10px;
+  }
+
+  .theme-toggle {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 9px;
+  }
+
+  /* -----------------------------
+     Hero
+     ----------------------------- */
+
+  .hero-section {
+    min-height: auto;
+  }
+
+  .hero-copy {
+    padding: 46px 18px 52px;
+  }
+
+  .micro-label {
+    margin-bottom: 18px;
+    font-size: 10px;
+    letter-spacing: 0.09em;
+  }
+
+  .hero-title {
+    max-width: 100%;
+    font-size: clamp(3rem, 17vw, 5rem);
+    line-height: 0.86;
+    letter-spacing: -0.06em;
+  }
+
+  .hero-summary {
+    margin: 34px 0 26px;
+    font-size: 1.03rem;
+    line-height: 1.12;
+  }
+
+  .hero-action {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    padding: 13px 14px;
+    font-size: 10px;
+  }
+
+  .hero-noise {
+    display: none;
+  }
+
+  .hero-forensics {
+    padding: 16px;
+  }
+
+  .hero-board-header {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .live-flag {
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+
+  .hero-board-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .forensic-stat {
+    min-height: 82px;
+    padding: 12px;
+  }
+
+  .forensic-stat strong {
+    font-size: 1.3rem;
+  }
+
+  .hero-diagram-wrap {
+    padding: 14px 10px 12px;
+  }
+
+  .hero-diagram {
+    min-height: 220px;
+  }
+
+  .hero-board-notes,
+  .signal-chip-row {
+    grid-template-columns: 1fr;
+  }
+
+  .note-row {
+    min-height: 58px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .note-row:last-child {
+    border-bottom: 0;
+  }
+
+  .signal-chip {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* -----------------------------
+     Story / thesis
+     ----------------------------- */
+
+  .story-section,
+  .manifest-section,
+  .section-heading {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .story-section {
+    padding-top: 38px;
+    padding-bottom: 38px;
+  }
+
+  .story-title,
+  .section-heading h2 {
+    font-size: clamp(2.3rem, 12vw, 4rem);
+    line-height: 0.9;
+  }
+
+  .story-card {
+    padding: 16px;
+  }
+
+  .story-card h3 {
+    font-size: 1.5rem;
+  }
+
+  .story-tx-row,
+  .story-line {
+    min-height: 44px;
+    gap: 7px;
+    padding: 9px 10px;
+    font-size: 10px;
+  }
+
+  .manifest-row {
+    grid-template-columns: 1fr;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .manifest-row p {
+    grid-column: auto;
+  }
+
+  /* -----------------------------
+     Network graph
+     ----------------------------- */
+
+  .section-heading {
+    gap: 22px;
+    padding-top: 34px;
+    padding-bottom: 24px;
+  }
+
+  .section-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid var(--ink);
+  }
+
+  .section-meta span {
+    min-width: 0;
+    padding: 11px 6px;
+    border-right: 1px solid var(--ink);
+    border-bottom: 0;
+    text-align: center;
+    font-size: 9px;
+  }
+
+  .section-meta span:last-child {
+    border-right: 0;
+  }
+
+  .graph-stage,
+  .graph-stage .graph-container,
+  .graph-skeleton {
+    min-height: 430px;
+    height: 430px;
+  }
+
+  .graph-registration {
+    inset: 10px 10px auto;
+    font-size: 9px;
+  }
+
+  .floating-status {
+    right: 10px;
+    bottom: 10px;
+    width: 150px;
+    padding: 11px;
+  }
+
+  .floating-status p {
+    margin-bottom: 12px;
+    font-size: 9px;
+  }
+
+  .floating-status strong {
+    font-size: 2.65rem;
+  }
+
+  .floating-status span {
+    margin-top: 10px;
+    font-size: 9px;
+  }
+
+  /* -----------------------------
+     Decision ledger
+     ----------------------------- */
+
+  .operations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-header {
+    gap: 10px;
+    padding: 13px 12px;
+    font-size: 9px;
+  }
+
+  .decision-row {
+    min-height: 58px;
+    grid-template-columns:
+      minmax(104px, 1fr)
+      58px
+      84px;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+
+  .decision-row span:nth-child(3) {
+    display: none;
+  }
+
+  .decision-id {
+    font-size: 10px;
+  }
+
+  .decision-action {
+    justify-self: end;
+  }
+
+  .signal-row {
+    min-height: 62px;
+    padding: 14px 16px;
+  }
+
+  .signal-row span {
+    font-size: 11px;
+  }
+
+  .signal-row strong {
+    font-size: 1.35rem;
+  }
+
+  .active-signal {
+    margin: 14px;
+    padding: 15px;
+  }
+
+  /* -----------------------------
+     Footer
+     ----------------------------- */
+
+  .colophon {
+    grid-template-columns: 1fr;
+    font-size: 9px;
+  }
+
+  .colophon > div {
+    min-height: auto;
+    padding: 16px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  /* -----------------------------
+     Investigation drawer
+     ----------------------------- */
+
+  .investigation-layer {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .investigation-panel {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    border-left: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  .investigation-backdrop {
+    display: none;
+  }
+
+  .investigation-header {
+    min-height: 168px;
+    padding: 16px;
+  }
+
+  .investigation-header span {
+    margin-bottom: 16px;
+    font-size: 9px;
+  }
+
+  .investigation-header h2 {
+    font-size: clamp(2.5rem, 13.5vw, 4.2rem);
+    line-height: 0.84;
+  }
+
+  .investigation-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .investigation-case-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .investigation-case-grid > div {
+    min-height: 88px;
+    padding: 14px 16px;
+  }
+
+  .investigation-case-id {
+    grid-column: auto;
+  }
+
+  .investigation-disclaimer {
+    padding: 16px;
+  }
+
+  .investigation-network-action {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px 16px;
+  }
+
+  .investigation-network-action button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .investigation-evidence-list > header {
+    padding: 12px 14px;
+    font-size: 9px;
+  }
+
+  .investigation-evidence {
+    padding: 16px 14px;
+  }
+
+  .investigation-evidence-header {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .investigation-evidence-header span:last-child {
+    grid-column: 2;
+  }
+
+  .investigation-footer {
+    padding: 14px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-title {
+    font-size: clamp(2.75rem, 16vw, 4.2rem);
+  }
+
+  .hero-board-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .section-meta span:last-child {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--ink);
+  }
+
+  .decision-row {
+    grid-template-columns: minmax(96px, 1fr) 54px 76px;
+    gap: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
