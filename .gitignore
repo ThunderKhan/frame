@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 
+
 # Virtual environments
 .venv/
 venv/
@@ -28,6 +29,9 @@ Thumbs.db
 # Generated data
 data/generated/
 data/processed/
+
+# Trained model artifacts
+artifacts/*.pkl
 
 # Secrets
 .env
