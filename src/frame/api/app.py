@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import (
     FastAPI,
     HTTPException,
+    Query,
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -221,9 +222,12 @@ def get_graph() -> dict[
     )
 
 
-@app.get("/api/v1/risk/recent")
 def recent_risk_results(
-    limit: int = 50,
+    limit: int = Query(
+        default=50,
+        ge=1,
+        le=200,
+    ),
 ) -> list[dict[str, object]]:
     engine = require_engine()
 
