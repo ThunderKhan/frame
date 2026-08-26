@@ -1,14 +1,48 @@
+<div align="center">
+
 # FRAME
 
-**Fraud Ring Analysis & Mapping Engine**
+### Fraud Ring Analysis & Mapping Engine
 
-> Explainable graph intelligence for coordinated payment abuse.
+**Explainable graph intelligence for coordinated payment abuse.**
 
-FRAME is a prototype risk-analysis system for detecting coordinated payment abuse that may be difficult to identify when transactions are evaluated independently.
+<br />
 
-Instead of looking only at isolated payments, FRAME models relationships between customers, cards, devices, IP addresses, and merchants as a graph. It combines graph structure with short-window temporal activity to estimate transaction risk, apply a deterministic decision policy, and surface observed network evidence for analysts.
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.116%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![NetworkX](https://img.shields.io/badge/NetworkX-Graph%20Analysis-2C5BB4?style=flat-square)](https://networkx.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?style=flat-square&logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+<br />
+
+**Graph-based fraud detection · Temporal risk analysis · Analyst investigation workflow**
+
+</div>
 
 ---
+
+<p align="center">
+  <a href="#the-problem">Problem</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#synthetic-benchmark">Benchmark</a> •
+  <a href="#live-demo">Demo</a> •
+  <a href="#api">API</a> •
+  <a href="#running-frame">Run Locally</a>
+</p>
+
+## Highlights
+
+- Graph-aware fraud analysis across customers, cards, devices, IPs, and merchants
+- Online temporal features over a rolling 30-minute window
+- Calibrated machine-learning risk scoring
+- Deterministic `ALLOW / REVIEW / BLOCK` decision policy
+- Observed network evidence for analyst investigation
+- Interactive live payment graph
+- Synthetic hard-negative benchmark with planted coordinated fraud rings
+- FastAPI backend with React investigation interface
 
 ## The problem
 
@@ -174,16 +208,11 @@ FRAME does not claim that any single evidence item caused the model's score. The
 
 ## Synthetic benchmark
 
-FRAME currently uses a controlled synthetic benchmark containing both coordinated fraud rings and difficult benign shared-infrastructure cases.
+> **95.83% of planted fraud was intercepted through REVIEW or BLOCK in the locked synthetic hard-negative benchmark.**
 
-The benchmark includes:
+> **3 / 3 planted coordinated fraud rings produced graph-backed evidence.**
 
-- 5,000 legitimate transactions
-- 96 planted fraud transactions
-- 3 coordinated fraud rings
-- shared-IP benign groups
-- shared-device benign groups
-- fraud interleaved chronologically with legitimate traffic
+All reported results are from a controlled synthetic benchmark and are not claims of production or real-world fraud-detection performance.
 
 ### Locked hard-negative test results
 
