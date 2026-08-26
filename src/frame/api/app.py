@@ -67,6 +67,38 @@ def get_graph() -> dict[
         risk_engine.graph
     )
 
+@app.get("/api/v1/risk/recent")
+def recent_risk_results(
+    limit: int = 50,
+) -> list[dict[str, object]]:
+    if risk_engine is None:
+        raise HTTPException(
+            status_code=503,
+            detail="risk engine unavailable",
+        )
+
+    limited = risk_engine.results[
+        -limit:
+    ]
+
+    return [
+        {
+            "transaction_id": (
+                result.transaction_id
+            ),
+            "risk_score": (
+                result.probability
+            ),
+            "action": (
+                result.action.value
+            ),
+            "evidence_count": len(
+                result.evidence
+            ),
+        }
+        for result in limited
+    ]
+
 @app.post("/api/v1/risk/score")
 def score_transaction(
     transaction: Transaction,

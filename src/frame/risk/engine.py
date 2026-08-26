@@ -50,6 +50,10 @@ class RiskEngine:
             )
         )
 
+        self.results: list[
+            RiskResult
+        ] = []
+
     def score(
         self,
         transaction: Transaction,
@@ -98,7 +102,7 @@ class RiskEngine:
             transaction,
         )
 
-        return RiskResult(
+        result = RiskResult(
             transaction_id=(
                 transaction.transaction_id
             ),
@@ -106,3 +110,9 @@ class RiskEngine:
             action=action,
             evidence=tuple(evidence),
         )
+
+        self.results.append(
+            result
+        )
+
+        return result
