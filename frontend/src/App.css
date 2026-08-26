@@ -74,6 +74,7 @@ html {
 
 body {
   margin: 0;
+
   min-width: 320px;
   min-height: 100vh;
 
@@ -106,7 +107,13 @@ button {
 
 .app-shell {
   width: 100%;
-  overflow: hidden;
+
+  /*
+   * Do not use overflow:hidden here.
+   * It can interfere with scrollIntoView
+   * and transformed descendants.
+   */
+  overflow-x: clip;
 
   color: var(--ink);
   background: var(--paper);
@@ -121,6 +128,9 @@ button {
    ========================================================= */
 
 .register-strip {
+  position: relative;
+  z-index: 20;
+
   display: grid;
 
   grid-template-columns:
@@ -132,6 +142,9 @@ button {
   border-top: 1px solid var(--ink);
   border-bottom: 1px solid var(--ink);
 
+  color: var(--ink);
+  background: var(--paper);
+
   font-family:
     "JetBrains Mono",
     "IBM Plex Mono",
@@ -142,6 +155,7 @@ button {
   font-weight: 700;
 
   letter-spacing: 0.08em;
+
   text-transform: uppercase;
 }
 
@@ -208,6 +222,7 @@ button {
   font-weight: 800;
 
   letter-spacing: 0.1em;
+
   text-transform: uppercase;
 
   cursor: pointer;
@@ -225,7 +240,9 @@ button {
 
 .theme-toggle:active {
   color: var(--ink);
+
   background: var(--red);
+
   border-color: var(--red);
 }
 
@@ -282,6 +299,7 @@ button {
   font-weight: 700;
 
   letter-spacing: 0.12em;
+
   text-transform: uppercase;
 }
 
@@ -307,13 +325,12 @@ button {
 
   text-transform: uppercase;
 
-  transform:
-    translateY(
-      calc(
-        var(--scroll-y) *
-        -0.035px
-      )
-    );
+  /*
+   * Deliberately no scroll transform here.
+   * The hero must always return exactly
+   * to the document origin.
+   */
+  transform: none;
 }
 
 .hero-summary {
@@ -364,6 +381,8 @@ button {
   text-decoration: none;
   text-transform: uppercase;
 
+  cursor: pointer;
+
   transition:
     color 100ms linear,
     background-color 100ms linear;
@@ -399,13 +418,12 @@ button {
 
   pointer-events: none;
 
-  transform:
-    translateY(
-      calc(
-        var(--scroll-y) *
-        0.07px
-      )
-    );
+  /*
+   * No parallax on the hero background.
+   * Keeping this static avoids visual
+   * disagreement with actual scroll.
+   */
+  transform: none;
 }
 
 .hero-forensics {
@@ -419,13 +437,10 @@ button {
 
   padding: 32px 28px;
 
-  transform:
-    translateY(
-      calc(
-        var(--scroll-y) *
-        -0.02px
-      )
-    );
+  /*
+   * No scroll transform on the hero panel.
+   */
+  transform: none;
 }
 
 /* =========================================================
@@ -777,6 +792,8 @@ button {
    ========================================================= */
 
 .story-section {
+  scroll-margin-top: 0;
+
   padding:
     52px
     clamp(24px, 4vw, 68px);
@@ -1245,12 +1262,13 @@ button {
 
   justify-content: space-between;
 
-  color: rgba(
-    244,
-    244,
-    240,
-    0.68
-  );
+  color:
+    rgba(
+      244,
+      244,
+      240,
+      0.68
+    );
 
   font-family:
     "JetBrains Mono",
@@ -1278,11 +1296,15 @@ button {
 
   color: var(--ink);
 
+  /*
+   * Parallax is safe here because this is
+   * far below the document origin.
+   */
   transform:
     translateY(
       calc(
         var(--scroll-y) *
-        -0.012px
+        -0.006px
       )
     );
 }
@@ -1440,7 +1462,6 @@ button {
 
 .decision-row:hover {
   color: var(--paper);
-
   background: var(--ink);
 }
 
@@ -1521,7 +1542,6 @@ button {
   padding-left: 28px;
 
   color: var(--paper);
-
   background: var(--ink);
 }
 
@@ -1620,7 +1640,6 @@ button {
   position: relative;
 
   width: 100%;
-
   min-height: 620px;
 
   overflow: hidden;
@@ -1670,12 +1689,13 @@ button {
 
   height: 1px;
 
-  background: rgba(
-    244,
-    244,
-    240,
-    0.5
-  );
+  background:
+    rgba(
+      244,
+      244,
+      240,
+      0.5
+    );
 
   transform-origin: left center;
 }
@@ -1805,7 +1825,7 @@ button {
 }
 
 /* =========================================================
-   BIDIRECTIONAL SCROLL REVEAL
+   BIDIRECTIONAL REVEAL
    ========================================================= */
 
 [data-reveal] {
@@ -1876,19 +1896,6 @@ button {
         28px
       )
     );
-}
-
-.graph-stage {
-  transform:
-    scale(
-      calc(
-        0.985 +
-        var(--reveal, 1) *
-        0.015
-      )
-    );
-
-  transform-origin: center center;
 }
 
 /* =========================================================
@@ -2107,10 +2114,7 @@ button {
   .network-section .section-heading,
   .network-section .section-meta,
   .graph-stage,
-  .floating-status,
-  .hero-title,
-  .hero-noise,
-  .hero-forensics {
+  .floating-status {
     opacity: 1;
 
     transform: none;

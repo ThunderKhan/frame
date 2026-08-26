@@ -94,10 +94,6 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    /*
-     * Older versions of the hero CTA used href="#story".
-     * Clear that stale fragment without changing scroll position.
-     */
     if (
       window.location.hash ===
       "#story"
@@ -150,6 +146,20 @@ function App() {
     };
   }, []);
 
+  /*
+   * Scroll animation system.
+   *
+   * IMPORTANT:
+   * We intentionally use the browser's real
+   * scroll position directly here.
+   *
+   * Previously FRAME interpolated a second
+   * "currentScroll" value. That created
+   * visual lag when returning to the top:
+   * window.scrollY could already be 0 while
+   * the hero was still rendered as though
+   * the page were partially scrolled.
+   */
   useEffect(() => {
     const root =
       appRef.current;
@@ -171,27 +181,23 @@ function App() {
       );
 
     let animationFrame = 0;
-
-    let currentScroll =
-      window.scrollY;
-
-    let targetScroll =
-      window.scrollY;
+    let ticking = false;
 
     const update = () => {
-      targetScroll =
+      const scrollY =
         window.scrollY;
 
-      currentScroll +=
-        (
-          targetScroll -
-          currentScroll
-        ) *
-        0.09;
-
+      /*
+       * At the physical top of the page,
+       * force an exact zero. This guarantees
+       * that every hero parallax transform
+       * returns to its initial state.
+       */
       root.style.setProperty(
         "--scroll-y",
-        `${currentScroll}`,
+        scrollY <= 1
+          ? "0"
+          : `${scrollY}`,
       );
 
       if (!reducedMotion) {
@@ -254,18 +260,52 @@ function App() {
         );
       }
 
+      ticking = false;
+    };
+
+    const requestUpdate = () => {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+
       animationFrame =
         window.requestAnimationFrame(
           update,
         );
     };
 
-    animationFrame =
-      window.requestAnimationFrame(
-        update,
-      );
+    /*
+     * Establish the correct state immediately,
+     * including when the page first loads.
+     */
+    update();
+
+    window.addEventListener(
+      "scroll",
+      requestUpdate,
+      {
+        passive: true,
+      },
+    );
+
+    window.addEventListener(
+      "resize",
+      requestUpdate,
+    );
 
     return () => {
+      window.removeEventListener(
+        "scroll",
+        requestUpdate,
+      );
+
+      window.removeEventListener(
+        "resize",
+        requestUpdate,
+      );
+
       window.cancelAnimationFrame(
         animationFrame,
       );
@@ -957,6 +997,7 @@ function App() {
         <div>
           FRAME™ ///
           <br />
+
           FRAUD RING
           ANALYSIS &amp;
           MAPPING ENGINE
@@ -966,9 +1007,11 @@ function App() {
           MODEL:
           FRAME-ONLINE-V1
           <br />
+
           POLICY:
           REVIEW ≥ 0.020
           <br />
+
           BLOCK ≥ 0.700
         </div>
 
@@ -976,9 +1019,11 @@ function App() {
           SUBSTRATE:
           DIGITAL NEWSPRINT
           <br />
+
           EDITION:
           BUILDATHON 2026
           <br />
+
           STATUS:
           {online
             ? "LIVE"
