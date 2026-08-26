@@ -54,6 +54,14 @@ class RiskEngine:
             RiskResult
         ] = []
 
+        #  * Keep the scored transaction context so
+        #  * investigation endpoints can map a decision
+        #  * back to graph entities.
+        self.transactions: dict[
+            str,
+            Transaction,
+        ] = {}
+
     def score(
         self,
         transaction: Transaction,
@@ -114,5 +122,9 @@ class RiskEngine:
         self.results.append(
             result
         )
+
+        self.transactions[
+            transaction.transaction_id
+        ] = transaction
 
         return result

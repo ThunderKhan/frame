@@ -92,10 +92,33 @@ def serialize_evidence(
     ]
 
 
+def serialize_entities(
+    transaction: Transaction,
+) -> dict[str, str]:
+    return {
+        "customer": (
+            transaction.customer_id
+        ),
+        "device": (
+            transaction.device_id
+        ),
+        "ip": (
+            transaction.ip_id
+        ),
+        "card": (
+            transaction.card_id
+        ),
+        "merchant": (
+            transaction.merchant_id
+        ),
+    }
+
+
 def serialize_risk_detail(
     result: RiskResult,
+    transaction: Transaction | None = None,
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "transaction_id": (
             result.transaction_id
         ),
@@ -112,6 +135,15 @@ def serialize_risk_detail(
             result
         ),
     }
+
+    if transaction is not None:
+        payload["entities"] = (
+            serialize_entities(
+                transaction
+            )
+        )
+
+    return payload
 
 
 @app.get("/health")
@@ -243,8 +275,15 @@ def get_risk_result(
             ),
         )
 
+    transaction = (
+        engine.transactions.get(
+            transaction_id
+        )
+    )
+
     return serialize_risk_detail(
-        result
+        result,
+        transaction,
     )
 
 
@@ -259,5 +298,6 @@ def score_transaction(
     )
 
     return serialize_risk_detail(
-        result
+        result,
+        transaction,
     )
