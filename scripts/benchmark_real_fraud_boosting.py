@@ -60,7 +60,7 @@ def evaluate(
     tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
 
     return {
-        "rows": int(len(split.labels)),
+        "rows": len(split.labels),
         "fraud": int(split.labels.sum()),
         "pr_auc": float(average_precision_score(labels, probabilities)),
         "roc_auc": float(roc_auc_score(labels, probabilities)),
