@@ -24,6 +24,7 @@ interface PaymentGraphProps {
 
 interface StreamGraphSnapshot extends GraphSnapshot {
   stream_events?: DatasetStreamEvent[];
+  analysis_id?: string;
 }
 
 interface RenderNode extends GraphNode {
@@ -146,15 +147,14 @@ function ImmediatePaymentGraph({ graph }: PaymentGraphProps) {
         graphRef.current?.zoomToFit(
           700,
           90,
-          (rawNode) => focusedNodeIds.size === 0 ||
-            ids.includes((rawNode as RenderNode).id),
+          (rawNode) => ids.includes((rawNode as RenderNode).id),
         );
       }, 80);
     }
 
     window.addEventListener("frame:focus-network", handleFocus);
     return () => window.removeEventListener("frame:focus-network", handleFocus);
-  }, [focusedNodeIds.size]);
+  }, []);
 
   useEffect(() => {
     if (graph.nodes.length === 0) {
@@ -315,9 +315,9 @@ export function PaymentGraph({ graph }: PaymentGraphProps) {
   if (events.length > 0) {
     return (
       <DatasetPlaybackGraph
+        key={streamGraph.analysis_id ?? `${events[0]?.transaction_id ?? "stream"}-${events.length}`}
         graph={graph}
         events={events}
-        analysisId={`${events[0]?.transaction_id ?? "stream"}-${events.length}`}
       />
     );
   }
