@@ -2,6 +2,7 @@ services:
   - type: web
     name: frame-api
     runtime: python
+    plan: free
     autoDeploy: true
     buildCommand: pip install -e . && python scripts/train_online_model_artifact.py
     startCommand: uvicorn frame.api.app:app --host 0.0.0.0 --port $PORT
