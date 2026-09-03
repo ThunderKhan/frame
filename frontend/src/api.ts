@@ -52,6 +52,39 @@ export interface RiskDetail
 }
 
 
+export interface RiskScoreInput {
+  transaction_id: string;
+  customer_id: string;
+  merchant_id: string;
+  device_id: string;
+  card_id: string;
+  ip_id: string;
+  amount: number;
+  timestamp: string;
+  account_age_days: number;
+}
+
+
+async function readError(
+  response: Response,
+): Promise<string> {
+  try {
+    const payload = await response.json();
+
+    if (
+      payload &&
+      typeof payload.detail === "string"
+    ) {
+      return payload.detail;
+    }
+  } catch {
+    // Fall through to a generic HTTP error.
+  }
+
+  return `HTTP ${response.status}`;
+}
+
+
 export async function getStats(): Promise<FrameStats> {
   const response = await fetch(
     `${API_BASE}/api/v1/stats`,
@@ -100,6 +133,46 @@ export async function getRiskDetail(
   }
 
   return response.json();
+}
+
+
+export async function scoreTransaction(
+  transaction: RiskScoreInput,
+): Promise<RiskDetail> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/risk/score`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(transaction),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function resetDemo(): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/api/v1/demo/reset`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
 }
 
 
