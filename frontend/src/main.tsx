@@ -9,6 +9,10 @@ import {
 import App from "./App.tsx";
 
 import {
+  DatasetLab,
+} from "./DatasetLab.tsx";
+
+import {
   DemoPage,
 } from "./DemoPage.tsx";
 
@@ -50,6 +54,7 @@ createRoot(
     {isDemo ? (
       <>
         <DemoPage />
+        <DatasetLab />
         <InvestigationOverlay />
       </>
     ) : (
