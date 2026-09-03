@@ -10,6 +10,9 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
+from frame.analysis.api import (
+    router as analysis_router,
+)
 from frame.api.graph import (
     serialize_graph,
 )
@@ -85,6 +88,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.include_router(
+    analysis_router
 )
 
 
