@@ -88,16 +88,17 @@ export function ProjectLinks() {
               href={REPOSITORY_URL}
               target="_blank"
               rel="noreferrer"
+              aria-label="Open FRAME on GitHub"
             >
               <GitHubMark />
-              GITHUB ↗
+              <span>GITHUB</span>
             </a>
 
             <a
               className="project-link"
               href={DOCS_URL}
             >
-              DOCS ↗
+              DOCS
             </a>
           </div>,
           heroTarget,
@@ -115,13 +116,13 @@ export function ProjectLinks() {
               target="_blank"
               rel="noreferrer"
             >
-              GITHUB REPOSITORY ↗
+              GITHUB REPOSITORY
             </a>
 
             <a
               href={DOCS_URL}
             >
-              FRAME DOCUMENTATION ↗
+              FRAME DOCUMENTATION
             </a>
           </div>,
           footerTarget,
