@@ -35,6 +35,28 @@ def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
     assert "transaction_only" in supports
 
 
+def test_builtin_frame_benchmark_runs_end_to_end() -> None:
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/analysis/builtin/frame-benchmark"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["dataset_id"] == "frame-benchmark"
+    assert payload["analysis_mode"] == "relational_graph_unsupervised"
+    assert payload["model"]["name"] == "IsolationForest"
+    assert payload["summary"]["rows_analyzed"] > 200
+    assert payload["summary"]["graph_nodes"] > 0
+    assert payload["summary"]["graph_edges"] > 0
+    assert payload["evaluation"] is not None
+    assert payload["evaluation"]["positive_labels"] > 0
+    assert payload["graph"]["nodes"]
+    assert payload["graph"]["edges"]
+
+
 def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
     client = TestClient(app)
 
