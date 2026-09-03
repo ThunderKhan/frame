@@ -55,6 +55,10 @@ def test_builtin_frame_benchmark_runs_end_to_end() -> None:
     assert payload["evaluation"]["positive_labels"] > 0
     assert payload["graph"]["nodes"]
     assert payload["graph"]["edges"]
+    assert payload["stream_events"]
+    assert payload["graph"]["stream_events"] == payload["stream_events"]
+    assert payload["graph"]["analysis_id"] == payload["analysis_id"]
+    assert payload["stream_events"][0]["row"] == 1
 
 
 def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
@@ -107,6 +111,8 @@ def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
 
     assert payload["graph"]["nodes"]
     assert payload["graph"]["edges"]
+    assert len(payload["stream_events"]) == 30
+    assert payload["stream_events"][0]["transaction_id"] == "tx_0"
 
     first_node = payload["graph"]["nodes"][0]
     assert "attributes" in first_node
