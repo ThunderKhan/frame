@@ -310,6 +310,18 @@ def get_risk_result(
     )
 
 
+@app.post("/api/v1/demo/reset")
+def reset_demo() -> dict[str, str]:
+    global risk_engine
+
+    risk_engine = build_risk_engine()
+
+    return {
+        "status": "ok",
+        "message": "demo state reset",
+    }
+
+
 @app.post("/api/v1/risk/score")
 def score_transaction(
     request: RiskScoreRequest,
