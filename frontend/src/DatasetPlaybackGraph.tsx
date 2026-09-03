@@ -10,7 +10,6 @@ import ForceGraph2D, {
 } from "react-force-graph-2d";
 
 import type {
-  GraphEdge,
   GraphNode,
   GraphSnapshot,
 } from "./api";
@@ -35,7 +34,7 @@ interface RenderNode extends GraphNode {
   y?: number;
 }
 
-interface RenderLink extends GraphEdge {
+interface RenderLink {
   source: string | RenderNode;
   target: string | RenderNode;
 }
@@ -168,17 +167,27 @@ export function DatasetPlaybackGraph({
     }
 
     const timer = window.setTimeout(() => {
-      setVisibleEventCount((current) => {
-        const next = Math.min(current + 1, totalEvents);
-        if (next >= totalEvents) {
-          setPlaying(false);
-        }
-        return next;
-      });
+      const next = Math.min(visibleEventCount + 1, totalEvents);
+      setVisibleEventCount(next);
+      if (next >= totalEvents) {
+        setPlaying(false);
+      }
     }, tickMs);
 
     return () => window.clearTimeout(timer);
   }, [playing, tickMs, totalEvents, visibleEventCount]);
+
+  useEffect(() => {
+    if (visibleEventCount === 0 || visibleEventCount % 24 !== 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => graphRef.current?.zoomToFit(260, 62),
+      40,
+    );
+    return () => window.clearTimeout(timer);
+  }, [visibleEventCount]);
 
   const visibleGraph = useMemo(
     () => buildVisibleGraph(graph, events, visibleEventCount),
