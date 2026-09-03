@@ -48,19 +48,16 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function SiteNavigation() {
-  const [target, setTarget] =
-    useState<Element | null>(null);
+  const [target] =
+    useState<Element | null>(
+      () =>
+        document.querySelector(
+          ".register-strip",
+        ),
+    );
 
   const [active, setActive] =
     useState("top");
-
-  useEffect(() => {
-    setTarget(
-      document.querySelector(
-        ".register-strip",
-      ),
-    );
-  }, []);
 
   useEffect(() => {
     const decisions =
