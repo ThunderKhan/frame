@@ -29,12 +29,8 @@ const NAV_ITEMS: NavItem[] = [
     target: "story",
   },
   {
-    label: "NETWORK",
-    target: "network",
-  },
-  {
-    label: "DECISIONS",
-    target: "decisions",
+    label: "DEMO",
+    href: "/demo/",
   },
   {
     label: "DOCS",
@@ -87,50 +83,12 @@ export function SiteNavigation() {
   }, []);
 
   useEffect(() => {
-    const decisions =
-      document.querySelector(
-        ".operations-grid",
+    const story =
+      document.getElementById(
+        "story",
       );
 
-    if (
-      decisions &&
-      !decisions.id
-    ) {
-      decisions.id =
-        "decisions";
-    }
-
-    const sections = [
-      {
-        id: "story",
-        element:
-          document.getElementById(
-            "story",
-          ),
-      },
-      {
-        id: "network",
-        element:
-          document.getElementById(
-            "network",
-          ),
-      },
-      {
-        id: "decisions",
-        element: decisions,
-      },
-    ].filter(
-      (
-        entry,
-      ): entry is {
-        id: string;
-        element: Element;
-      } => Boolean(entry.element),
-    );
-
-    if (
-      sections.length === 0
-    ) {
+    if (!story) {
       return;
     }
 
@@ -138,23 +96,13 @@ export function SiteNavigation() {
       new IntersectionObserver(
         (entries) => {
           const visible =
-            entries
-              .filter(
-                (entry) =>
-                  entry.isIntersecting,
-              )
-              .sort(
-                (a, b) =>
-                  b.intersectionRatio -
-                  a.intersectionRatio,
-              )[0];
-
-          if (
-            visible?.target.id
-          ) {
-            setActive(
-              visible.target.id,
+            entries.find(
+              (entry) =>
+                entry.isIntersecting,
             );
+
+          if (visible) {
+            setActive("story");
           }
         },
         {
@@ -168,12 +116,7 @@ export function SiteNavigation() {
         },
       );
 
-    sections.forEach(
-      ({ element }) =>
-        observer.observe(
-          element,
-        ),
-    );
+    observer.observe(story);
 
     const onScroll = () => {
       if (
