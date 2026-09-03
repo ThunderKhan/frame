@@ -1,8 +1,6 @@
 <div align="center">
 
-# FRAME
-
-### Fraud Ring Analysis & Mapping Engine
+<img src="assets/frame-readme-hero-1280x640.png" alt="FRAME — Fraud Ring Analysis & Mapping Engine" width="100%" />
 
 **Explainable graph intelligence for coordinated payment abuse.**
 
