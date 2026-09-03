@@ -27,9 +27,10 @@ from frame.risk.result import RiskResult
 
 risk_engine: RiskEngine | None = None
 
-LOCAL_CORS_ORIGINS = (
+DEFAULT_CORS_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://frame-risk.vercel.app",
 )
 
 
@@ -39,16 +40,19 @@ def cors_origins() -> list[str]:
         "",
     ).strip()
 
-    if not configured:
-        return list(
-            LOCAL_CORS_ORIGINS
+    origins = {
+        origin.rstrip("/")
+        for origin in DEFAULT_CORS_ORIGINS
+    }
+
+    if configured:
+        origins.update(
+            origin.strip().rstrip("/")
+            for origin in configured.split(",")
+            if origin.strip()
         )
 
-    return [
-        origin.strip().rstrip("/")
-        for origin in configured.split(",")
-        if origin.strip()
-    ]
+    return sorted(origins)
 
 
 @asynccontextmanager
