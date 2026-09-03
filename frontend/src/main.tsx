@@ -35,6 +35,7 @@ import {
 import "./index.css";
 import "./mobile.css";
 import "./LandingMode.css";
+import "./DatasetMode.css";
 
 const isDemo =
   window.location.pathname === "/demo" ||
