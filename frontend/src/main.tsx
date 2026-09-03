@@ -12,6 +12,10 @@ import {
   InvestigationOverlay,
 } from "./InvestigationOverlay.tsx";
 
+import {
+  ProjectLinks,
+} from "./ProjectLinks.tsx";
+
 import "./index.css";
 import "./mobile.css";
 
@@ -23,6 +27,8 @@ createRoot(
 ).render(
   <StrictMode>
     <App />
+
+    <ProjectLinks />
 
     <InvestigationOverlay />
   </StrictMode>,
