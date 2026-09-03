@@ -1,6 +1,5 @@
 from typing import Any
 
-
 EXTRA_DATASET_CATALOG: tuple[dict[str, Any], ...] = (
     {
         "id": "baf-neurips",

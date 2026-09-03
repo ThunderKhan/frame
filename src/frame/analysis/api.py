@@ -7,7 +7,6 @@ from frame.analysis.catalog import DATASET_CATALOG as BASE_DATASET_CATALOG
 from frame.analysis.catalog_extra import EXTRA_DATASET_CATALOG
 from frame.analysis.service import AnalysisMapping, EntityColumn, analyze_csv
 
-
 DATASET_CATALOG = BASE_DATASET_CATALOG + EXTRA_DATASET_CATALOG
 
 CATALOG_BY_ID = {dataset["id"]: dataset for dataset in DATASET_CATALOG}

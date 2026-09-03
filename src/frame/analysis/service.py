@@ -10,7 +10,6 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import average_precision_score, roc_auc_score
 
-
 MAX_UPLOAD_BYTES = 5_000_000
 MAX_ROWS = 10_000
 MAX_GRAPH_NODES = 800
