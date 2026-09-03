@@ -37,7 +37,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/docs/",
   },
   {
-    label: "GITHUB ↗",
+    label: "GITHUB",
     href: REPOSITORY_URL,
     external: true,
   },
