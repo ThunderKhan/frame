@@ -2,3 +2,43 @@ html.frame-landing .network-section,
 html.frame-landing .operations-grid {
   display: none !important;
 }
+
+html.frame-landing .hero-section {
+  grid-template-columns: 1fr;
+}
+
+html.frame-landing .hero-copy {
+  min-height: 760px;
+  border-right: 0;
+  padding-right: clamp(28px, 8vw, 140px);
+}
+
+html.frame-landing .hero-title {
+  max-width: 980px;
+}
+
+html.frame-landing .hero-summary {
+  max-width: 760px;
+}
+
+html.frame-landing .hero-forensics {
+  border-top: 1px solid var(--ink);
+  padding: 44px clamp(24px, 5vw, 72px) 64px;
+}
+
+html.frame-landing .hero-board {
+  width: min(980px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 820px) {
+  html.frame-landing .hero-copy {
+    min-height: auto;
+    padding-right: clamp(18px, 5vw, 32px);
+  }
+
+  html.frame-landing .hero-forensics {
+    padding: 24px 18px 36px;
+  }
+}
