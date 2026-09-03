@@ -14,6 +14,7 @@ MAX_UPLOAD_BYTES = 5_000_000
 MAX_ROWS = 10_000
 MAX_GRAPH_NODES = 800
 MAX_RESULTS = 100
+MAX_STREAM_EVENTS = 500
 
 
 @dataclass(frozen=True)
@@ -308,6 +309,17 @@ def analyze_csv(
             }
         )
 
+    stream_events = [
+        {
+            "transaction_id": item["transaction_id"],
+            "row": item["row"],
+            "amount": item["amount"],
+            "label": item["label"],
+            "entities": item["entities"],
+        }
+        for item in results[:MAX_STREAM_EVENTS]
+    ]
+
     results.sort(
         key=lambda item: item["anomaly_score"],
         reverse=True,
@@ -382,5 +394,6 @@ def analyze_csv(
         },
         "evaluation": evaluation,
         "graph": _graph_payload(graph),
+        "stream_events": stream_events,
         "top_anomalies": results[:MAX_RESULTS],
     }
