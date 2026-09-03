@@ -232,9 +232,11 @@ def _graph_payload(graph: nx.Graph) -> dict[str, Any]:
     nodes = [
         {
             "id": node_id,
-            "label": graph.nodes[node_id].get("label", node_id),
-            "type": graph.nodes[node_id].get("type", "entity"),
-            "degree": graph.degree(node_id),
+            "attributes": {
+                "node_type": graph.nodes[node_id].get("type", "entity"),
+                "entity_id": graph.nodes[node_id].get("label", node_id),
+                "degree": graph.degree(node_id),
+            },
         }
         for node_id in ordered[:MAX_GRAPH_NODES]
     ]
@@ -243,8 +245,11 @@ def _graph_payload(graph: nx.Graph) -> dict[str, Any]:
         {
             "source": left,
             "target": right,
-            "transactions": data.get("transactions", 1),
-            "amount": round(float(data.get("amount", 0.0)), 2),
+            "attributes": {
+                "relation": "dataset_relationship",
+                "transactions": data.get("transactions", 1),
+                "amount": round(float(data.get("amount", 0.0)), 2),
+            },
         }
         for left, right, data in graph.edges(data=True)
         if left in kept and right in kept
@@ -280,7 +285,7 @@ def analyze_csv(
             StringIO(csv_text),
             nrows=bounded_limit,
         )
-    except Exception as exc:  # pandas surfaces several parser exception types
+    except Exception as exc:
         raise ValueError("unable to parse CSV") from exc
 
     if frame.empty:
