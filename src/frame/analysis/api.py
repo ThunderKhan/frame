@@ -5,28 +5,14 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from frame.analysis.catalog import (
-    DATASET_CATALOG as BASE_DATASET_CATALOG,
-)
-from frame.analysis.catalog_extra import (
-    EXTRA_DATASET_CATALOG,
-)
-from frame.analysis.service import (
-    AnalysisMapping,
-    EntityColumn,
-    analyze_csv,
-)
+from frame.analysis.catalog import DATASET_CATALOG as BASE_DATASET_CATALOG
+from frame.analysis.catalog_extra import EXTRA_DATASET_CATALOG
+from frame.analysis.service import AnalysisMapping, EntityColumn, analyze_csv
 
 
-DATASET_CATALOG = (
-    BASE_DATASET_CATALOG
-    + EXTRA_DATASET_CATALOG
-)
+DATASET_CATALOG = BASE_DATASET_CATALOG + EXTRA_DATASET_CATALOG
 
-CATALOG_BY_ID = {
-    dataset["id"]: dataset
-    for dataset in DATASET_CATALOG
-}
+CATALOG_BY_ID = {dataset["id"]: dataset for dataset in DATASET_CATALOG}
 
 
 router = APIRouter(
@@ -41,9 +27,7 @@ class EntityMappingRequest(BaseModel):
 
 
 class DatasetMappingRequest(BaseModel):
-    entities: list[EntityMappingRequest] = (
-        Field(default_factory=list)
-    )
+    entities: list[EntityMappingRequest] = Field(default_factory=list)
     transaction_id: str | None = None
     timestamp: str | None = None
     amount: str | None = None
@@ -68,26 +52,16 @@ def _mapping_from_payload(
     mapping_payload: dict[str, Any] | None
 
     if request.mapping is not None:
-        mapping_payload = (
-            request.mapping.model_dump()
-        )
+        mapping_payload = request.mapping.model_dump()
     else:
-        profile = CATALOG_BY_ID.get(
-            request.dataset_id
-        )
-        mapping_payload = (
-            profile.get("default_mapping")
-            if profile is not None
-            else None
-        )
+        profile = CATALOG_BY_ID.get(request.dataset_id)
+        mapping_payload = profile.get("default_mapping") if profile is not None else None
 
     if not mapping_payload:
         raise HTTPException(
             status_code=422,
             detail=(
-                "this dataset needs an explicit "
-                "schema mapping before FRAME "
-                "can analyze it"
+                "this dataset needs an explicit schema mapping before FRAME can analyze it"
             ),
         )
 
@@ -96,40 +70,23 @@ def _mapping_from_payload(
             column=entity["column"],
             entity_type=entity["type"],
         )
-        for entity in mapping_payload.get(
-            "entities",
-            [],
-        )
+        for entity in mapping_payload.get("entities", [])
     )
 
     return AnalysisMapping(
         entities=entities,
-        transaction_id=(
-            mapping_payload.get(
-                "transaction_id"
-            )
-        ),
-        timestamp=mapping_payload.get(
-            "timestamp"
-        ),
-        amount=mapping_payload.get(
-            "amount"
-        ),
-        label=mapping_payload.get(
-            "label"
-        ),
+        transaction_id=mapping_payload.get("transaction_id"),
+        timestamp=mapping_payload.get("timestamp"),
+        amount=mapping_payload.get("amount"),
+        label=mapping_payload.get("label"),
     )
 
 
 @router.get("/datasets")
 def list_datasets() -> dict[str, object]:
     return {
-        "datasets": list(
-            DATASET_CATALOG
-        ),
-        "count": len(
-            DATASET_CATALOG
-        ),
+        "datasets": list(DATASET_CATALOG),
+        "count": len(DATASET_CATALOG),
         "upload_limits": {
             "max_csv_mb": 5,
             "max_rows": 10000,
@@ -141,9 +98,7 @@ def list_datasets() -> dict[str, object]:
 def analyze_dataset(
     request: DatasetAnalysisRequest,
 ) -> dict[str, Any]:
-    mapping = _mapping_from_payload(
-        request
-    )
+    mapping = _mapping_from_payload(request)
 
     try:
         return analyze_csv(
