@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import (
@@ -25,6 +26,29 @@ from frame.risk.engine import RiskEngine
 from frame.risk.result import RiskResult
 
 risk_engine: RiskEngine | None = None
+
+LOCAL_CORS_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
+
+
+def cors_origins() -> list[str]:
+    configured = os.getenv(
+        "FRAME_CORS_ORIGINS",
+        "",
+    ).strip()
+
+    if not configured:
+        return list(
+            LOCAL_CORS_ORIGINS
+        )
+
+    return [
+        origin.strip().rstrip("/")
+        for origin in configured.split(",")
+        if origin.strip()
+    ]
 
 
 @asynccontextmanager
@@ -53,10 +77,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -222,6 +243,7 @@ def get_graph() -> dict[
     )
 
 
+@app.get("/api/v1/risk/recent")
 def recent_risk_results(
     limit: int = Query(
         default=50,
