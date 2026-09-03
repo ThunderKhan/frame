@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -29,21 +30,53 @@ function GitHubMark() {
 }
 
 export function ProjectLinks() {
-  const [heroTarget] =
-    useState<Element | null>(
-      () =>
+  const [heroTarget, setHeroTarget] =
+    useState<Element | null>(null);
+
+  const [footerTarget, setFooterTarget] =
+    useState<Element | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+
+    const resolveTargets = () => {
+      const hero =
         document.querySelector(
           ".hero-copy",
-        ),
-    );
+        );
 
-  const [footerTarget] =
-    useState<Element | null>(
-      () =>
+      const footer =
         document.querySelector(
           ".colophon",
-        ),
-    );
+        );
+
+      if (hero) {
+        setHeroTarget(hero);
+      }
+
+      if (footer) {
+        setFooterTarget(footer);
+      }
+
+      if (!hero || !footer) {
+        frame =
+          window.requestAnimationFrame(
+            resolveTargets,
+          );
+      }
+    };
+
+    frame =
+      window.requestAnimationFrame(
+        resolveTargets,
+      );
+
+    return () => {
+      window.cancelAnimationFrame(
+        frame,
+      );
+    };
+  }, []);
 
   return (
     <>
