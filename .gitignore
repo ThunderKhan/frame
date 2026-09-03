@@ -30,6 +30,9 @@ Thumbs.db
 data/generated/
 data/processed/
 
+# Real-world datasets (download locally, do not commit)
+data/real/*.csv
+
 # Trained model artifacts
 artifacts/*.pkl
 
