@@ -9,6 +9,10 @@ import {
 import App from "./App.tsx";
 
 import {
+  DemoPage,
+} from "./DemoPage.tsx";
+
+import {
   InvestigationOverlay,
 } from "./InvestigationOverlay.tsx";
 
@@ -26,7 +30,16 @@ import {
 
 import "./index.css";
 import "./mobile.css";
+import "./LandingMode.css";
 
+const isDemo =
+  window.location.pathname === "/demo" ||
+  window.location.pathname.startsWith("/demo/");
+
+document.documentElement.classList.toggle(
+  "frame-landing",
+  !isDemo,
+);
 
 createRoot(
   document.getElementById(
@@ -34,14 +47,19 @@ createRoot(
   )!,
 ).render(
   <StrictMode>
-    <App />
-
-    <SiteNavigation />
-
-    <ProjectLinks />
-
-    <SurfaceInteractions />
-
-    <InvestigationOverlay />
+    {isDemo ? (
+      <>
+        <DemoPage />
+        <InvestigationOverlay />
+      </>
+    ) : (
+      <>
+        <App />
+        <SiteNavigation />
+        <ProjectLinks />
+        <SurfaceInteractions />
+        <InvestigationOverlay />
+      </>
+    )}
   </StrictMode>,
 );
