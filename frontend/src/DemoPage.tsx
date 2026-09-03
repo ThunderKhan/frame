@@ -121,7 +121,7 @@ function scenarioTransactions(
       (_, index) =>
         transaction(
           `${id}_${index + 1}`,
-          new Date(base.getTime() + index * 8000),
+          base,
           {
             customer_id: `normal_customer_${id}_${index + 1}`,
             merchant_id: `merchant_${10 + index}`,
@@ -141,7 +141,7 @@ function scenarioTransactions(
       (_, index) =>
         transaction(
           `${id}_${index + 1}`,
-          new Date(base.getTime() + index * 3500),
+          base,
           {
             customer_id: `coord_customer_${id}_${(index % 4) + 1}`,
             merchant_id: `merchant_${20 + (index % 3)}`,
@@ -163,7 +163,7 @@ function scenarioTransactions(
 
       return transaction(
         `${id}_${index + 1}`,
-        new Date(base.getTime() + index * 1800),
+        base,
         {
           customer_id: `ring_customer_${id}_${customer}`,
           merchant_id: `merchant_${30 + (index % 4)}`,
@@ -177,7 +177,6 @@ function scenarioTransactions(
     },
   );
 }
-
 export function DemoPage() {
   const [stats, setStats] =
     useState<FrameStats>(EMPTY_STATS);
