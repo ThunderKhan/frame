@@ -247,15 +247,20 @@ export function DemoPage() {
     document.title =
       "FRAME Demo — Live Fraud Ring Console";
 
-    void refresh();
+    const initialRefresh = window.setTimeout(
+      () => void refresh(),
+      0,
+    );
 
     const interval = window.setInterval(
       () => void refresh(),
       2000,
     );
 
-    return () =>
+    return () => {
+      window.clearTimeout(initialRefresh);
       window.clearInterval(interval);
+    };
   }, [refresh]);
 
   async function runScenario(
