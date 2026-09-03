@@ -1,0 +1,17 @@
+.demo-intro,
+.demo-network,
+.demo-decisions {
+  display: none;
+}
+
+.demo-testbench {
+  border-bottom: 0;
+}
+
+.demo-testbench > .demo-section-head,
+.demo-testbench > .demo-test-grid,
+.demo-testbench > .demo-test-status,
+.demo-testbench > .demo-test-error,
+.demo-testbench > .demo-custom {
+  display: none;
+}
