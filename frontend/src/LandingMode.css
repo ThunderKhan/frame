@@ -5,11 +5,11 @@ html.frame-landing .operations-grid {
 
 html.frame-landing .hero-section {
   grid-template-columns: 1fr;
-  min-height: 700px;
+  min-height: 680px;
 }
 
 html.frame-landing .hero-copy {
-  min-height: 700px;
+  min-height: 680px;
   border-right: 0;
   padding-right: clamp(28px, 8vw, 140px);
   padding-bottom: 46px;
@@ -25,25 +25,22 @@ html.frame-landing .hero-summary {
   max-width: 760px;
 }
 
-/*
- * Use the space freed by moving the operational panel below the fold
- * as an intentional hero action rail.
- */
 html.frame-landing .hero-action {
   position: absolute;
   right: clamp(36px, 7vw, 124px);
-  top: 350px;
+  top: 340px;
   z-index: 5;
-  min-width: 238px;
+  width: 300px;
+  min-width: 300px;
   justify-content: center;
 }
 
 html.frame-landing .project-link-cluster {
   position: absolute;
   right: clamp(36px, 7vw, 124px);
-  top: 414px;
+  top: 405px;
   z-index: 5;
-  width: 238px;
+  width: 300px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -53,7 +50,7 @@ html.frame-landing .project-link-cluster {
 html.frame-landing .project-link {
   width: 100%;
   min-width: 0;
-  padding-inline: 14px;
+  padding-inline: 16px;
 }
 
 html.frame-landing .hero-forensics {
@@ -66,10 +63,6 @@ html.frame-landing .hero-board {
   margin-left: auto;
   margin-right: auto;
 }
-
-/* =========================================================
-   FIRST-LOAD HERO SEQUENCE
-   ========================================================= */
 
 @keyframes frame-hero-rise {
   from {
@@ -156,7 +149,8 @@ html.frame-landing .hero-forensics {
   html.frame-landing .hero-action,
   html.frame-landing .project-link-cluster {
     position: static;
-    width: auto;
+    width: min(100%, 360px);
+    min-width: 0;
     max-width: 360px;
   }
 
