@@ -16,6 +16,7 @@ import {
 } from "./PaymentGraph";
 
 import "./DatasetLab.css";
+import "./DatasetWorkflow.css";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL ??
@@ -183,8 +184,28 @@ function isSingleCsvRunnable(profile: DatasetProfile | undefined) {
     return true;
   }
 
-  return profile.support === "full_pipeline" ||
-    profile.support === "adapter_ready";
+  return profile.support === "adapter_ready";
+}
+
+function scrollTo(selector: string) {
+  window.setTimeout(() => {
+    document.querySelector(selector)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 80);
+}
+
+function adapterActionLabel(dataset: DatasetProfile) {
+  if (dataset.id === "frame-benchmark") {
+    return ">>> RUN BUILT-IN";
+  }
+
+  if (dataset.support === "adapter_ready") {
+    return ">>> SELECT DATASET";
+  }
+
+  return ">>> VIEW REQUIREMENTS";
 }
 
 export function DatasetLab() {
@@ -287,22 +308,31 @@ export function DatasetLab() {
     setSelectedId(profile.id);
     setAnalysis(null);
     setError(null);
+    setFileName("");
+    setCsvText("");
+    setColumns([]);
 
     if (profile.default_mapping) {
       setMapping(profile.default_mapping);
     }
+
+    scrollTo(".dataset-workbench");
   }
 
   function chooseCustom() {
     setSelectedId("custom");
     setAnalysis(null);
     setError(null);
+    setFileName("");
+    setCsvText("");
+    setColumns([]);
     setMapping({
       entities: [
         { column: "", type: "entity" },
         { column: "", type: "entity" },
       ],
     });
+    scrollTo(".dataset-workbench");
   }
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
@@ -330,15 +360,48 @@ export function DatasetLab() {
     }));
   }
 
+  async function runBuiltIn() {
+    setSelectedId("frame-benchmark");
+    setAnalysis(null);
+    setError(null);
+    setRunning(true);
+    scrollTo(".dataset-workbench");
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/v1/analysis/builtin/frame-benchmark`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      const payload: AnalysisResult = await response.json();
+      setAnalysis(payload);
+      scrollTo(".dataset-results");
+    } catch (analysisError) {
+      setError(
+        analysisError instanceof Error
+          ? analysisError.message
+          : "Built-in benchmark analysis failed",
+      );
+    } finally {
+      setRunning(false);
+    }
+  }
+
   async function runAnalysis() {
     if (!csvText || !fileName) {
-      setError("Choose a CSV file before running FRAME.");
+      setError("Choose the selected dataset CSV before running FRAME.");
       return;
     }
 
-    if (!isSingleCsvRunnable(selectedProfile)) {
+    if (!isSingleCsvRunnable(selectedProfile) && selectedId !== "custom") {
       setError(
-        "This catalog entry uses a different ingestion mode. Use its source link or choose a single-CSV adapter/BYOD file.",
+        "This dataset uses a different ingestion mode. Read the requirements or choose an adapter-ready dataset.",
       );
       return;
     }
@@ -382,6 +445,7 @@ export function DatasetLab() {
 
       const payload: AnalysisResult = await response.json();
       setAnalysis(payload);
+      scrollTo(".dataset-results");
     } catch (analysisError) {
       setError(
         analysisError instanceof Error
@@ -393,9 +457,27 @@ export function DatasetLab() {
     }
   }
 
+  function handleDatasetAction(dataset: DatasetProfile) {
+    if (dataset.id === "frame-benchmark") {
+      void runBuiltIn();
+      return;
+    }
+
+    chooseDataset(dataset);
+  }
+
   if (!target) {
     return null;
   }
+
+  const isBuiltIn = selectedId === "frame-benchmark";
+  const isCustom = selectedId === "custom";
+  const isAdapter = selectedProfile?.support === "adapter_ready";
+  const isUnsupported = Boolean(
+    selectedProfile &&
+      !isBuiltIn &&
+      !isAdapter,
+  );
 
   return createPortal(
     <div className="dataset-lab-root">
@@ -410,6 +492,13 @@ export function DatasetLab() {
           <span>GRAPH + ML</span>
         </div>
       </header>
+
+      <div className="dataset-flow-strip" aria-label="Dataset analysis workflow">
+        <div><span>01</span><strong>CHOOSE DATA SOURCE</strong></div>
+        <div><span>02</span><strong>PROVIDE DATA</strong></div>
+        <div><span>03</span><strong>VERIFY SCHEMA</strong></div>
+        <div><span>04</span><strong>RUN + INVESTIGATE</strong></div>
+      </div>
 
       <section className="dataset-catalog" aria-label="Dataset catalog">
         {catalog?.datasets.map((dataset) => (
@@ -435,14 +524,15 @@ export function DatasetLab() {
             <div className="dataset-card-actions">
               <button
                 type="button"
-                onClick={() => chooseDataset(dataset)}
+                disabled={running && dataset.id === "frame-benchmark"}
+                onClick={() => handleDatasetAction(dataset)}
               >
-                {isSingleCsvRunnable(dataset)
-                  ? ">>> USE ADAPTER"
-                  : ">>> INSPECT MODE"}
+                {running && dataset.id === "frame-benchmark"
+                  ? "ANALYZING..."
+                  : adapterActionLabel(dataset)}
               </button>
               <a href={dataset.source_url} target="_blank" rel="noreferrer">
-                SOURCE ↗
+                {dataset.id === "frame-benchmark" ? "SOURCE ↗" : "GET DATA ↗"}
               </a>
             </div>
             <small>{dataset.limitations}</small>
@@ -451,7 +541,7 @@ export function DatasetLab() {
 
         <article
           className={
-            selectedId === "custom"
+            isCustom
               ? "dataset-card dataset-card-custom is-selected"
               : "dataset-card dataset-card-custom"
           }
@@ -462,11 +552,11 @@ export function DatasetLab() {
           </div>
           <h3>UPLOAD YOUR OWN CSV</h3>
           <p>
-            Map the relationships your data actually contains. FRAME never invents
-            missing customers, devices, IPs, cards or merchants.
+            Bring arbitrary relational transaction data. FRAME maps only the
+            relationships your file actually contains.
           </p>
           <button type="button" onClick={chooseCustom}>
-            &gt;&gt;&gt; MAP CUSTOM DATA
+            &gt;&gt;&gt; UPLOAD / MAP CSV
           </button>
         </article>
       </section>
@@ -474,7 +564,7 @@ export function DatasetLab() {
       <section className="dataset-workbench">
         <header>
           <div>
-            <span>SELECTED PROFILE</span>
+            <span>01 / SELECTED DATA SOURCE</span>
             <strong>{selectedProfile?.name ?? "CUSTOM / BYOD"}</strong>
           </div>
           <div>
@@ -487,96 +577,240 @@ export function DatasetLab() {
           </div>
         </header>
 
-        <div className="dataset-upload-row">
-          <label className="dataset-drop">
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(event) => void handleFile(event)}
-            />
-            <span>[ CSV INPUT ]</span>
-            <strong>{fileName || "DROP / CHOOSE DATASET FILE"}</strong>
-            <small>
-              Public deployment: first 5,000 rows, 5 MB upload cap.
-            </small>
-          </label>
-
-          <div className="dataset-run-panel">
-            <span>PIPELINE</span>
-            <strong>
-              INGEST → GRAPH → GRAPH FEATURES → ISOLATION FOREST → EVALUATE
-            </strong>
-            <button
-              type="button"
-              disabled={running || !isSingleCsvRunnable(selectedProfile)}
-              onClick={() => void runAnalysis()}
-            >
-              {running ? "ANALYZING..." : ">>> RUN FRAME"}
-            </button>
+        {isBuiltIn && (
+          <div className="dataset-guided-panel">
+            <div>
+              <span>02 / DATA</span>
+              <h3>BUILT-IN BENCHMARK — NO UPLOAD REQUIRED</h3>
+              <p>
+                FRAME generates its hard-negative benchmark server-side with
+                customer, device, IP, card and merchant relationships.
+              </p>
+            </div>
+            <div>
+              <span>03 / SCHEMA</span>
+              <strong>CUSTOMER → DEVICE → IP → CARD → MERCHANT</strong>
+              <small>Fraud labels are included for evaluation only.</small>
+            </div>
+            <div>
+              <span>04 / ANALYZE</span>
+              <button
+                type="button"
+                disabled={running}
+                onClick={() => void runBuiltIn()}
+              >
+                {running ? "ANALYZING..." : ">>> RUN BUILT-IN BENCHMARK"}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {selectedId === "custom" && columns.length > 0 && (
-          <div className="dataset-mapper">
-            <header>
-              <span>[ SCHEMA MAPPER ]</span>
-              <strong>{columns.length} COLUMNS DETECTED</strong>
-            </header>
-
-            <div className="dataset-entity-map">
-              {mapping.entities.map((entity, index) => (
-                <div className="dataset-map-row" key={`entity-${index}`}>
-                  <span>ENTITY {index + 1}</span>
-                  <select
-                    value={entity.column}
-                    onChange={(event) =>
-                      updateEntity(index, "column", event.target.value)
-                    }
-                  >
-                    <option value="">SELECT COLUMN</option>
-                    {columns.map((column) => (
-                      <option key={column} value={column}>{column}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={entity.type}
-                    onChange={(event) =>
-                      updateEntity(index, "type", event.target.value)
-                    }
-                  >
-                    {ENTITY_TYPES.map((type) => (
-                      <option key={type} value={type}>{type.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
+        {isAdapter && selectedProfile && (
+          <>
+            <div className="dataset-selected-banner">
+              <strong>{selectedProfile.name.toUpperCase()} SELECTED ✓</strong>
+              <span>NEXT: DOWNLOAD OR CHOOSE THE OFFICIAL CSV BELOW.</span>
             </div>
 
-            <div className="dataset-optional-map">
-              {([
-                ["amount", "AMOUNT"],
-                ["label", "LABEL"],
-                ["transaction_id", "TRANSACTION ID"],
-                ["timestamp", "TIMESTAMP"],
-              ] as const).map(([key, label]) => (
-                <label key={key}>
-                  <span>{label}</span>
-                  <select
-                    value={mapping[key] ?? ""}
-                    onChange={(event) =>
-                      setMapping((current) => ({
-                        ...current,
-                        [key]: event.target.value || null,
-                      }))
-                    }
-                  >
-                    <option value="">NOT MAPPED</option>
-                    {columns.map((column) => (
-                      <option key={column} value={column}>{column}</option>
-                    ))}
-                  </select>
-                </label>
-              ))}
+            <div className="dataset-upload-row">
+              <label className="dataset-drop">
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(event) => void handleFile(event)}
+                />
+                <span>[ 02 / PROVIDE DATA ]</span>
+                <strong>{fileName || `DROP / CHOOSE ${selectedProfile.name.toUpperCase()} CSV`}</strong>
+                <small>
+                  Public deployment: first 5,000 rows, 5 MB upload cap.
+                </small>
+              </label>
+
+              <div className="dataset-run-panel">
+                <span>NEED THE OFFICIAL DATASET?</span>
+                <strong>{selectedProfile.provider}</strong>
+                <a
+                  className="dataset-primary-link"
+                  href={selectedProfile.source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  DOWNLOAD / OPEN SOURCE ↗
+                </a>
+              </div>
+            </div>
+
+            {selectedProfile.default_mapping && (
+              <div className="dataset-adapter-preview">
+                <header>
+                  <span>[ 03 / SCHEMA ADAPTER ]</span>
+                  <strong>AUTO-MAPPED — NO MANUAL MAPPING NEEDED</strong>
+                </header>
+                <div>
+                  {selectedProfile.default_mapping.entities.map((entity) => (
+                    <span key={`${entity.column}-${entity.type}`}>
+                      {entity.column} → {entity.type.toUpperCase()}
+                    </span>
+                  ))}
+                  {selectedProfile.default_mapping.amount && (
+                    <span>{selectedProfile.default_mapping.amount} → AMOUNT</span>
+                  )}
+                  {selectedProfile.default_mapping.label && (
+                    <span>{selectedProfile.default_mapping.label} → LABEL</span>
+                  )}
+                  {selectedProfile.default_mapping.timestamp && (
+                    <span>{selectedProfile.default_mapping.timestamp} → TIMESTAMP</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="dataset-final-action">
+              <div>
+                <span>[ 04 / ANALYZE ]</span>
+                <strong>INGEST → GRAPH → GRAPH FEATURES → ISOLATION FOREST → EVALUATE</strong>
+              </div>
+              <button
+                type="button"
+                disabled={running || !csvText}
+                onClick={() => void runAnalysis()}
+              >
+                {running ? "ANALYZING..." : ">>> RUN FRAME"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {isCustom && (
+          <>
+            <div className="dataset-selected-banner">
+              <strong>CUSTOM / BYOD SELECTED ✓</strong>
+              <span>NEXT: CHOOSE A CSV, THEN MAP AT LEAST TWO RELATIONSHIP COLUMNS.</span>
+            </div>
+
+            <div className="dataset-upload-row">
+              <label className="dataset-drop">
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(event) => void handleFile(event)}
+                />
+                <span>[ 02 / PROVIDE DATA ]</span>
+                <strong>{fileName || "DROP / CHOOSE YOUR CSV"}</strong>
+                <small>
+                  Public deployment: first 5,000 rows, 5 MB upload cap.
+                </small>
+              </label>
+
+              <div className="dataset-run-panel">
+                <span>BYOD RULE</span>
+                <strong>
+                  FRAME NEVER INVENTS MISSING DEVICES, IPS, CARDS, CUSTOMERS OR MERCHANTS.
+                </strong>
+              </div>
+            </div>
+
+            {columns.length > 0 && (
+              <div className="dataset-mapper">
+                <header>
+                  <span>[ 03 / SCHEMA MAPPER ]</span>
+                  <strong>{columns.length} COLUMNS DETECTED</strong>
+                </header>
+
+                <div className="dataset-entity-map">
+                  {mapping.entities.map((entity, index) => (
+                    <div className="dataset-map-row" key={`entity-${index}`}>
+                      <span>ENTITY {index + 1}</span>
+                      <select
+                        value={entity.column}
+                        onChange={(event) =>
+                          updateEntity(index, "column", event.target.value)
+                        }
+                      >
+                        <option value="">SELECT COLUMN</option>
+                        {columns.map((column) => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={entity.type}
+                        onChange={(event) =>
+                          updateEntity(index, "type", event.target.value)
+                        }
+                      >
+                        {ENTITY_TYPES.map((type) => (
+                          <option key={type} value={type}>{type.toUpperCase()}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="dataset-optional-map">
+                  {([
+                    ["amount", "AMOUNT"],
+                    ["label", "LABEL"],
+                    ["transaction_id", "TRANSACTION ID"],
+                    ["timestamp", "TIMESTAMP"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key}>
+                      <span>{label}</span>
+                      <select
+                        value={mapping[key] ?? ""}
+                        onChange={(event) =>
+                          setMapping((current) => ({
+                            ...current,
+                            [key]: event.target.value || null,
+                          }))
+                        }
+                      >
+                        <option value="">NOT MAPPED</option>
+                        {columns.map((column) => (
+                          <option key={column} value={column}>{column}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="dataset-final-action">
+              <div>
+                <span>[ 04 / ANALYZE ]</span>
+                <strong>MAP → GRAPH → GRAPH FEATURES → ISOLATION FOREST → EVALUATE</strong>
+              </div>
+              <button
+                type="button"
+                disabled={running || !csvText}
+                onClick={() => void runAnalysis()}
+              >
+                {running ? "ANALYZING..." : ">>> RUN FRAME"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {isUnsupported && selectedProfile && (
+          <div className="dataset-guided-panel">
+            <div>
+              <span>02 / INGESTION REQUIREMENT</span>
+              <h3>{supportLabel(selectedProfile.support)}</h3>
+              <p>{selectedProfile.limitations}</p>
+            </div>
+            <div>
+              <span>WHAT FRAME WILL NOT DO</span>
+              <strong>IT WILL NOT FABRICATE RELATIONSHIPS THAT ARE ABSENT FROM THE RELEASED DATA.</strong>
+            </div>
+            <div>
+              <a
+                className="dataset-primary-link"
+                href={selectedProfile.source_url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                OPEN DATASET / REQUIREMENTS ↗
+              </a>
             </div>
           </div>
         )}
