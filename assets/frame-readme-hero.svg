@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="none"/>
+  <g transform="translate(92 150)">
+    <path d="M20 78 L105 0 L330 0 L290 60 L135 60 L135 120 L265 120 L220 180 L135 180 L135 330 L20 330 Z"
+          fill="#171716" stroke="#F6F5F1" stroke-width="6" stroke-linejoin="miter"/>
+    <line x1="140" y1="162" x2="235" y2="255" stroke="#F6F5F1" stroke-width="25"/>
+    <line x1="140" y1="162" x2="235" y2="255" stroke="#FF2C2C" stroke-width="14"/>
+    <circle cx="140" cy="162" r="36" fill="#F6F5F1"/>
+    <circle cx="140" cy="162" r="31" fill="#171716"/>
+    <circle cx="140" cy="162" r="27" fill="#FF2C2C"/>
+    <circle cx="235" cy="255" r="33" fill="#F6F5F1"/>
+    <circle cx="235" cy="255" r="28" fill="#171716"/>
+    <circle cx="235" cy="255" r="24" fill="#FF2C2C"/>
+  </g>
+  <text x="475" y="330" font-family="Inter, Arial, sans-serif" font-size="156" font-weight="900"
+        letter-spacing="-6" fill="#171716" stroke="#F6F5F1" stroke-width="3" paint-order="stroke fill">FRAME</text>
+  <text x="475" y="422" font-family="'JetBrains Mono', Consolas, monospace" font-size="26" font-weight="800"
+        letter-spacing="1.6" fill="#171716" stroke="#F6F5F1" stroke-width="1" paint-order="stroke fill">FRAUD RING ANALYSIS &amp; MAPPING ENGINE</text>
+  <rect x="475" y="448" width="245" height="7" fill="#FF2C2C"/>
+</svg>
