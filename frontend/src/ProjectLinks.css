@@ -11,6 +11,8 @@
 
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 9px;
 
   padding: 14px 18px;
 
@@ -53,6 +55,12 @@
   color: var(--paper);
   background: var(--red);
   border-color: var(--red);
+}
+
+.project-link-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
 }
 
 .project-link:focus-visible,
@@ -106,6 +114,5 @@
 
   .project-link {
     width: 100%;
-    justify-content: center;
   }
 }
