@@ -128,6 +128,16 @@ def _frame_benchmark_csv() -> str:
     return stream.getvalue()
 
 
+def _attach_stream_to_graph(result: dict[str, Any]) -> dict[str, Any]:
+    graph = result.get("graph")
+    stream_events = result.get("stream_events")
+
+    if isinstance(graph, dict) and isinstance(stream_events, list):
+        graph["stream_events"] = stream_events
+
+    return result
+
+
 @router.get("/datasets")
 def list_datasets() -> dict[str, object]:
     return {
@@ -169,12 +179,14 @@ def analyze_builtin_dataset(
     )
 
     try:
-        return analyze_csv(
-            dataset_id=dataset_id,
-            filename="frame-ring-benchmark.csv",
-            csv_text=_frame_benchmark_csv(),
-            mapping=mapping,
-            row_limit=5000,
+        return _attach_stream_to_graph(
+            analyze_csv(
+                dataset_id=dataset_id,
+                filename="frame-ring-benchmark.csv",
+                csv_text=_frame_benchmark_csv(),
+                mapping=mapping,
+                row_limit=5000,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -190,12 +202,14 @@ def analyze_dataset(
     mapping = _mapping_from_payload(request)
 
     try:
-        return analyze_csv(
-            dataset_id=request.dataset_id,
-            filename=request.filename,
-            csv_text=request.csv_text,
-            mapping=mapping,
-            row_limit=request.row_limit,
+        return _attach_stream_to_graph(
+            analyze_csv(
+                dataset_id=request.dataset_id,
+                filename=request.filename,
+                csv_text=request.csv_text,
+                mapping=mapping,
+                row_limit=request.row_limit,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
