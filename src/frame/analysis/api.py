@@ -92,7 +92,7 @@ def _frame_benchmark_world():
     )
 
 
-def _frame_benchmark_csv(world: Any) -> str:
+def _frame_benchmark_csv(transactions: Any) -> str:
     stream = StringIO()
     writer = csv.writer(stream, lineterminator="\n")
     writer.writerow(
@@ -111,7 +111,7 @@ def _frame_benchmark_csv(world: Any) -> str:
         ]
     )
 
-    for transaction in world.transactions:
+    for transaction in transactions:
         writer.writerow(
             [
                 transaction.transaction_id,
@@ -212,16 +212,24 @@ def analyze_builtin_dataset(
 
     try:
         world = _frame_benchmark_world()
+        transactions = sorted(
+            world.transactions,
+            key=lambda transaction: (
+                transaction.timestamp,
+                transaction.transaction_id,
+            ),
+        )
+
         result = analyze_csv(
             dataset_id=dataset_id,
             filename="frame-ring-benchmark.csv",
-            csv_text=_frame_benchmark_csv(world),
+            csv_text=_frame_benchmark_csv(transactions),
             mapping=mapping,
             row_limit=5000,
         )
         result = _attach_online_decisions(
             result,
-            world.transactions,
+            transactions,
         )
         return _attach_stream_to_graph(result)
     except ValueError as exc:
