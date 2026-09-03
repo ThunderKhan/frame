@@ -16,6 +16,10 @@ import {
   ProjectLinks,
 } from "./ProjectLinks.tsx";
 
+import {
+  SurfaceInteractions,
+} from "./SurfaceInteractions.tsx";
+
 import "./index.css";
 import "./mobile.css";
 
@@ -29,6 +33,8 @@ createRoot(
     <App />
 
     <ProjectLinks />
+
+    <SurfaceInteractions />
 
     <InvestigationOverlay />
   </StrictMode>,
