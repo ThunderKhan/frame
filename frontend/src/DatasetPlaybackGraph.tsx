@@ -22,6 +22,9 @@ export interface DatasetStreamEvent {
   amount: number;
   label: number | null;
   entities: string[];
+  risk_score?: number;
+  action?: "ALLOW" | "REVIEW" | "BLOCK";
+  evidence_count?: number;
 }
 
 interface DatasetPlaybackGraphProps {
@@ -88,14 +91,17 @@ function buildVisibleGraph(
   };
 }
 
-function buildSharedInfrastructure(graph: GraphSnapshot): Set<string> {
-  const nodeTypes = new Map(
+function nodeTypeMap(graph: GraphSnapshot): Map<string, string> {
+  return new Map(
     graph.nodes.map((node) => [
       node.id,
       String(node.attributes.node_type ?? "entity"),
     ]),
   );
+}
 
+function buildSharedInfrastructure(graph: GraphSnapshot): Set<string> {
+  const nodeTypes = nodeTypeMap(graph);
   const customerNeighbors = new Map<string, Set<string>>();
 
   for (const edge of graph.edges) {
@@ -125,6 +131,21 @@ function buildSharedInfrastructure(graph: GraphSnapshot): Set<string> {
     [...customerNeighbors.entries()]
       .filter(([, customers]) => customers.size >= 2)
       .map(([nodeId]) => nodeId),
+  );
+}
+
+function isSharedCustomerLink(
+  rawLink: RenderLink,
+  sharedInfrastructure: Set<string>,
+  nodeTypes: Map<string, string>,
+): boolean {
+  const source = endpointId(rawLink.source);
+  const target = endpointId(rawLink.target);
+
+  return (
+    sharedInfrastructure.has(source) && nodeTypes.get(target) === "customer"
+  ) || (
+    sharedInfrastructure.has(target) && nodeTypes.get(source) === "customer"
   );
 }
 
@@ -161,6 +182,14 @@ export function DatasetPlaybackGraph({
     ? Math.max(28, Math.min(110, Math.floor(9000 / totalEvents)))
     : 80;
 
+  const currentEvent = visibleEventCount > 0
+    ? events[Math.min(visibleEventCount - 1, totalEvents - 1)]
+    : null;
+
+  const currentDelay = currentEvent?.action === "REVIEW" || currentEvent?.action === "BLOCK"
+    ? 650
+    : tickMs;
+
   useEffect(() => {
     if (!playing || visibleEventCount >= totalEvents || totalEvents === 0) {
       return;
@@ -172,10 +201,10 @@ export function DatasetPlaybackGraph({
       if (next >= totalEvents) {
         setPlaying(false);
       }
-    }, tickMs);
+    }, currentDelay);
 
     return () => window.clearTimeout(timer);
-  }, [playing, tickMs, totalEvents, visibleEventCount]);
+  }, [currentDelay, playing, totalEvents, visibleEventCount]);
 
   useEffect(() => {
     if (visibleEventCount === 0 || visibleEventCount % 24 !== 0) {
@@ -194,6 +223,11 @@ export function DatasetPlaybackGraph({
     [events, graph, visibleEventCount],
   );
 
+  const nodeTypes = useMemo(
+    () => nodeTypeMap(visibleGraph),
+    [visibleGraph],
+  );
+
   const sharedInfrastructure = useMemo(
     () => buildSharedInfrastructure(visibleGraph),
     [visibleGraph],
@@ -201,20 +235,30 @@ export function DatasetPlaybackGraph({
 
   const suspiciousNeighbors = useMemo(() => {
     const neighbors = new Set<string>();
+
     for (const edge of visibleGraph.edges) {
-      if (sharedInfrastructure.has(edge.source)) {
+      const sourceType = nodeTypes.get(edge.source);
+      const targetType = nodeTypes.get(edge.target);
+
+      if (sharedInfrastructure.has(edge.source) && targetType === "customer") {
         neighbors.add(edge.target);
       }
-      if (sharedInfrastructure.has(edge.target)) {
+
+      if (sharedInfrastructure.has(edge.target) && sourceType === "customer") {
         neighbors.add(edge.source);
       }
     }
-    return neighbors;
-  }, [sharedInfrastructure, visibleGraph.edges]);
 
-  const currentEvent = visibleEventCount > 0
-    ? events[Math.min(visibleEventCount - 1, totalEvents - 1)]
-    : null;
+    return neighbors;
+  }, [nodeTypes, sharedInfrastructure, visibleGraph.edges]);
+
+  const latestPolicyAlert = useMemo(
+    () => events
+      .slice(0, visibleEventCount)
+      .filter((event) => event.action === "REVIEW" || event.action === "BLOCK")
+      .at(-1) ?? null,
+    [events, visibleEventCount],
+  );
 
   const red = themeValue("--red", "#ff3b30");
   const background = themeValue("--graph-bg", "#050505");
@@ -291,28 +335,34 @@ export function DatasetPlaybackGraph({
             d3AlphaDecay={0.045}
             d3VelocityDecay={0.36}
             nodeRelSize={4}
-            linkColor={(rawLink) => {
-              const link = rawLink as RenderLink;
-              return sharedInfrastructure.has(endpointId(link.source)) ||
-                sharedInfrastructure.has(endpointId(link.target))
+            linkColor={(rawLink) =>
+              isSharedCustomerLink(
+                rawLink as RenderLink,
+                sharedInfrastructure,
+                nodeTypes,
+              )
                 ? red
-                : "rgba(244,244,240,0.12)";
-            }}
-            linkWidth={(rawLink) => {
-              const link = rawLink as RenderLink;
-              return sharedInfrastructure.has(endpointId(link.source)) ||
-                sharedInfrastructure.has(endpointId(link.target))
-                ? 1.8
-                : 0.45;
-            }}
-            linkDirectionalParticles={(rawLink) => {
-              const link = rawLink as RenderLink;
-              return sharedInfrastructure.has(endpointId(link.source)) ||
-                sharedInfrastructure.has(endpointId(link.target))
+                : "rgba(244,244,240,0.10)"
+            }
+            linkWidth={(rawLink) =>
+              isSharedCustomerLink(
+                rawLink as RenderLink,
+                sharedInfrastructure,
+                nodeTypes,
+              )
+                ? 2.1
+                : 0.35
+            }
+            linkDirectionalParticles={(rawLink) =>
+              isSharedCustomerLink(
+                rawLink as RenderLink,
+                sharedInfrastructure,
+                nodeTypes,
+              )
                 ? 1
-                : 0;
-            }}
-            linkDirectionalParticleWidth={1.2}
+                : 0
+            }
+            linkDirectionalParticleWidth={1.3}
             linkDirectionalParticleColor={() => red}
             nodeCanvasObject={(rawNode, context, globalScale) => {
               const node = rawNode as RenderNode;
@@ -379,9 +429,23 @@ export function DatasetPlaybackGraph({
           </small>
         </div>
 
+        {latestPolicyAlert && (
+          <div
+            className={`dataset-policy-alert is-${latestPolicyAlert.action?.toLowerCase()}`}
+          >
+            <span>[ FRAME-ONLINE-V1 POLICY ALERT ]</span>
+            <strong>
+              {latestPolicyAlert.action} /// {((latestPolicyAlert.risk_score ?? 0) * 100).toFixed(1)}% RISK
+            </strong>
+            <small>
+              {latestPolicyAlert.transaction_id} · {latestPolicyAlert.evidence_count ?? 0} OBSERVED SIGNALS
+            </small>
+          </div>
+        )}
+
         <div className="dataset-playback-legend">
           <span><i className="shared" /> SHARED DEVICE / IP</span>
-          <span><i className="context" /> CONNECTED ENTITY</span>
+          <span><i className="context" /> CONNECTED CUSTOMER</span>
           <span><i /> ORDINARY CONTEXT</span>
         </div>
       </div>
