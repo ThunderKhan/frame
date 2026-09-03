@@ -343,7 +343,7 @@ export function DatasetPlaybackGraph({
               if (isShared && (sharedInfrastructure.size <= 10 || globalScale > 2.4)) {
                 const label = type === "device" ? "SHARED DEVICE" : "SHARED IP";
                 const fontSize = Math.max(3.2, 10 / globalScale);
-                context.font = `800 ${fontSize}px \"JetBrains Mono\", Consolas, monospace`;
+                context.font = `800 ${fontSize}px "JetBrains Mono", Consolas, monospace`;
                 context.textAlign = "left";
                 context.textBaseline = "middle";
                 context.fillStyle = red;
