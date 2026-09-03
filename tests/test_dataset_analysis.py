@@ -6,19 +6,14 @@ from frame.api.app import app
 def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
     client = TestClient(app)
 
-    response = client.get(
-        "/api/v1/datasets"
-    )
+    response = client.get("/api/v1/datasets")
 
     assert response.status_code == 200
 
     payload = response.json()
     assert payload["count"] >= 13
 
-    dataset_ids = {
-        dataset["id"]
-        for dataset in payload["datasets"]
-    }
+    dataset_ids = {dataset["id"] for dataset in payload["datasets"]}
 
     assert "frame-benchmark" in dataset_ids
     assert "ibm-aml" in dataset_ids
@@ -31,10 +26,7 @@ def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
     assert "baf-neurips" in dataset_ids
     assert "bitcoinheist" in dataset_ids
 
-    supports = {
-        dataset["support"]
-        for dataset in payload["datasets"]
-    }
+    supports = {dataset["support"] for dataset in payload["datasets"]}
 
     assert "full_pipeline" in supports
     assert "adapter_ready" in supports
@@ -46,23 +38,15 @@ def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
 def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
     client = TestClient(app)
 
-    lines = [
-        "tx,source,target,amount,label"
-    ]
+    lines = ["tx,source,target,amount,label"]
 
     for index in range(30):
         source = f"acct_{index % 6}"
-        target = (
-            "hub"
-            if index >= 24
-            else f"merchant_{index % 10}"
-        )
+        target = "hub" if index >= 24 else f"merchant_{index % 10}"
         amount = 100 + index * 7
         label = 1 if index >= 24 else 0
 
-        lines.append(
-            f"tx_{index},{source},{target},{amount},{label}"
-        )
+        lines.append(f"tx_{index},{source},{target},{amount},{label}")
 
     response = client.post(
         "/api/v1/analysis/dataset",
@@ -93,10 +77,7 @@ def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
 
     payload = response.json()
 
-    assert payload[
-        "analysis_mode"
-    ] == "relational_graph_unsupervised"
-
+    assert payload["analysis_mode"] == "relational_graph_unsupervised"
     assert payload["model"]["name"] == "IsolationForest"
     assert payload["summary"]["rows_analyzed"] == 30
     assert payload["summary"]["graph_nodes"] > 0
@@ -120,8 +101,10 @@ def test_known_paysim_adapter_maps_without_explicit_schema() -> None:
     client = TestClient(app)
 
     lines = [
-        "step,type,amount,nameOrig,oldbalanceOrg,newbalanceOrig,"
-        "nameDest,oldbalanceDest,newbalanceDest,isFraud,isFlaggedFraud"
+        (
+            "step,type,amount,nameOrig,oldbalanceOrg,newbalanceOrig,"
+            "nameDest,oldbalanceDest,newbalanceDest,isFraud,isFlaggedFraud"
+        )
     ]
 
     for index in range(20):
