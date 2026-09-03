@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from io import StringIO
 from itertools import combinations
@@ -73,10 +71,7 @@ def _label_value(value: Any) -> int | None:
 
 
 def _validate_mapping(frame: pd.DataFrame, mapping: AnalysisMapping) -> None:
-    required = {
-        entity.column
-        for entity in mapping.entities
-    }
+    required = {entity.column for entity in mapping.entities}
 
     for optional in (
         mapping.transaction_id,
@@ -89,15 +84,10 @@ def _validate_mapping(frame: pd.DataFrame, mapping: AnalysisMapping) -> None:
 
     missing = sorted(required.difference(frame.columns))
     if missing:
-        raise ValueError(
-            "missing mapped columns: "
-            + ", ".join(missing)
-        )
+        raise ValueError("missing mapped columns: " + ", ".join(missing))
 
     if len(mapping.entities) < 2:
-        raise ValueError(
-            "relationship analysis requires at least two mapped entity columns"
-        )
+        raise ValueError("relationship analysis requires at least two mapped entity columns")
 
 
 def _build_relationship_graph(
@@ -128,11 +118,7 @@ def _build_relationship_graph(
                 )
 
         nodes = list(dict.fromkeys(nodes))
-        amount = (
-            _numeric_value(row[mapping.amount])
-            if mapping.amount
-            else 0.0
-        )
+        amount = _numeric_value(row[mapping.amount]) if mapping.amount else 0.0
 
         for left, right in combinations(nodes, 2):
             if graph.has_edge(left, right):
@@ -178,17 +164,12 @@ def _row_features(
             if node_id in graph
         ]
 
-        component = [
-            float(component_sizes.get(node_id, 1))
-            for node_id in nodes
-        ]
+        component = [float(component_sizes.get(node_id, 1)) for node_id in nodes]
 
         pair_weights: list[float] = []
         for left, right in combinations(nodes, 2):
             if graph.has_edge(left, right):
-                pair_weights.append(
-                    float(graph[left][right].get("transactions", 1))
-                )
+                pair_weights.append(float(graph[left][right].get("transactions", 1)))
 
         feature_rows.append(
             [
@@ -307,19 +288,14 @@ def analyze_csv(
 
     labels: list[int | None] = []
     if mapping.label:
-        labels = [
-            _label_value(value)
-            for value in frame[mapping.label].tolist()
-        ]
+        labels = [_label_value(value) for value in frame[mapping.label].tolist()]
     else:
         labels = [None] * len(frame)
 
     results: list[dict[str, Any]] = []
     for position, (_, row) in enumerate(frame.iterrows()):
         transaction_id = (
-            _string_value(row[mapping.transaction_id])
-            if mapping.transaction_id
-            else None
+            _string_value(row[mapping.transaction_id]) if mapping.transaction_id else None
         ) or f"row_{position + 1}"
 
         results.append(
@@ -362,7 +338,7 @@ def analyze_csv(
         )
 
         evaluation = {
-            "labeled_rows": int(len(y_true)),
+            "labeled_rows": len(y_true),
             "positive_labels": int(y_true.sum()),
         }
 
@@ -395,8 +371,8 @@ def analyze_csv(
             ],
         },
         "summary": {
-            "rows_analyzed": int(len(frame)),
-            "columns": int(len(frame.columns)),
+            "rows_analyzed": len(frame),
+            "columns": len(frame.columns),
             "graph_nodes": graph.number_of_nodes(),
             "graph_edges": graph.number_of_edges(),
             "components": len(components),
