@@ -134,6 +134,7 @@ def _attach_stream_to_graph(result: dict[str, Any]) -> dict[str, Any]:
 
     if isinstance(graph, dict) and isinstance(stream_events, list):
         graph["stream_events"] = stream_events
+        graph["analysis_id"] = result.get("analysis_id")
 
     return result
 
