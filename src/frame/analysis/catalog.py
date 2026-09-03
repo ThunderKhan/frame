@@ -88,15 +88,15 @@ DATASET_CATALOG: tuple[dict[str, Any], ...] = (
         "source_url": "https://github.com/IBM/AMLSim",
         "limitations": (
             "AMLSim is a generator rather than a single immutable dataset; "
-            "FRAME ingests its exported transaction CSVs."
+            "FRAME maps the standard exported transaction log schema."
         ),
         "default_mapping": {
-            "timestamp": "timestamp",
+            "timestamp": "step",
             "amount": "amount",
-            "label": "is_sar",
+            "label": "isSAR",
             "entities": [
-                {"column": "orig_id", "type": "account"},
-                {"column": "dest_id", "type": "account"},
+                {"column": "nameOrig", "type": "account"},
+                {"column": "nameDest", "type": "account"},
             ],
         },
     },
@@ -174,7 +174,7 @@ DATASET_CATALOG: tuple[dict[str, Any], ...] = (
         ),
         "source_url": "https://www.kaggle.com/datasets/kartik2112/fraud-detection",
         "limitations": (
-            "Rich customer/card/merchant structure, but no native device or IP IDs."
+            "Rich card/merchant structure, but no native device or IP IDs."
         ),
         "default_mapping": {
             "transaction_id": "trans_num",
@@ -233,8 +233,8 @@ DATASET_CATALOG: tuple[dict[str, Any], ...] = (
         ),
         "source_url": "https://github.com/IBM/TabFormer",
         "limitations": (
-            "Very large; FRAME's public deployment should analyze bounded subsets "
-            "instead of loading all 24M rows into memory."
+            "Very large; FRAME's public deployment analyzes bounded subsets "
+            "instead of loading all rows into memory."
         ),
         "default_mapping": {
             "timestamp": "Time",
