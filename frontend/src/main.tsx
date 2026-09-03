@@ -17,6 +17,10 @@ import {
 } from "./ProjectLinks.tsx";
 
 import {
+  SiteNavigation,
+} from "./SiteNavigation.tsx";
+
+import {
   SurfaceInteractions,
 } from "./SurfaceInteractions.tsx";
 
@@ -31,6 +35,8 @@ createRoot(
 ).render(
   <StrictMode>
     <App />
+
+    <SiteNavigation />
 
     <ProjectLinks />
 
