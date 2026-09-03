@@ -252,6 +252,21 @@ export function DatasetPlaybackGraph({
     return neighbors;
   }, [nodeTypes, sharedInfrastructure, visibleGraph.edges]);
 
+  const policyAttached = useMemo(
+    () => events.some(
+      (event) => event.action !== undefined && typeof event.risk_score === "number",
+    ),
+    [events],
+  );
+
+  const latestPolicyEvent = useMemo(
+    () => events
+      .slice(0, visibleEventCount)
+      .filter((event) => event.action !== undefined)
+      .at(-1) ?? null,
+    [events, visibleEventCount],
+  );
+
   const latestPolicyAlert = useMemo(
     () => events
       .slice(0, visibleEventCount)
@@ -259,6 +274,8 @@ export function DatasetPlaybackGraph({
       .at(-1) ?? null,
     [events, visibleEventCount],
   );
+
+  const policyDisplayEvent = latestPolicyAlert ?? latestPolicyEvent;
 
   const red = themeValue("--red", "#ff3b30");
   const background = themeValue("--graph-bg", "#050505");
@@ -429,19 +446,45 @@ export function DatasetPlaybackGraph({
           </small>
         </div>
 
-        {latestPolicyAlert && (
-          <div
-            className={`dataset-policy-alert is-${latestPolicyAlert.action?.toLowerCase()}`}
-          >
-            <span>[ FRAME-ONLINE-V1 POLICY ALERT ]</span>
-            <strong>
-              {latestPolicyAlert.action} /// {((latestPolicyAlert.risk_score ?? 0) * 100).toFixed(1)}% RISK
-            </strong>
-            <small>
-              {latestPolicyAlert.transaction_id} · {latestPolicyAlert.evidence_count ?? 0} OBSERVED SIGNALS
-            </small>
-          </div>
-        )}
+        <div
+          className={
+            latestPolicyAlert
+              ? `dataset-policy-alert is-${latestPolicyAlert.action?.toLowerCase()}`
+              : policyAttached
+                ? "dataset-policy-alert is-active"
+                : "dataset-policy-alert is-missing"
+          }
+        >
+          <span>[ FRAME-ONLINE-V1 ONLINE POLICY ]</span>
+          {!policyAttached ? (
+            <>
+              <strong>POLICY DATA NOT ATTACHED</strong>
+              <small>
+                BACKEND DEPLOYMENT IS MISSING THE ONLINE DECISION STREAM. REDEPLOY RENDER.
+              </small>
+            </>
+          ) : policyDisplayEvent ? (
+            <>
+              <strong>
+                {policyDisplayEvent.action} /// {((policyDisplayEvent.risk_score ?? 0) * 100).toFixed(1)}% RISK
+              </strong>
+              <small>
+                {latestPolicyAlert
+                  ? "LATEST FLAGGED TRANSACTION"
+                  : "CURRENT POLICY DECISION"}
+                {" · "}
+                {policyDisplayEvent.transaction_id}
+                {" · "}
+                {policyDisplayEvent.evidence_count ?? 0} OBSERVED SIGNALS
+              </small>
+            </>
+          ) : (
+            <>
+              <strong>POLICY ENGINE READY</strong>
+              <small>WAITING FOR FIRST TRANSACTION DECISION.</small>
+            </>
+          )}
+        </div>
 
         <div className="dataset-playback-legend">
           <span><i className="shared" /> SHARED DEVICE / IP</span>
