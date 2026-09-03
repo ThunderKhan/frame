@@ -18,6 +18,13 @@ import {
 
 import "./DemoPage.css";
 
+type Theme =
+  | "light"
+  | "dark";
+
+const THEME_STORAGE_KEY =
+  "frame-theme";
+
 const EMPTY_STATS: FrameStats = {
   transactions_scored: 0,
   allowed: 0,
@@ -27,6 +34,30 @@ const EMPTY_STATS: FrameStats = {
   graph_nodes: 0,
   graph_edges: 0,
 };
+
+function initialTheme(): Theme {
+  try {
+    const saved =
+      window.localStorage.getItem(
+        THEME_STORAGE_KEY,
+      );
+
+    if (
+      saved === "light" ||
+      saved === "dark"
+    ) {
+      return saved;
+    }
+  } catch {
+    // Fall back to the operating-system preference when storage is unavailable.
+  }
+
+  return window.matchMedia(
+    "(prefers-color-scheme: dark)",
+  ).matches
+    ? "dark"
+    : "light";
+}
 
 function formatNumber(value: number) {
   return String(value).padStart(5, "0");
@@ -47,6 +78,25 @@ export function DemoPage() {
 
   const [online, setOnline] =
     useState(false);
+
+  const [theme, setTheme] =
+    useState<Theme>(initialTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      theme,
+    );
+
+    try {
+      window.localStorage.setItem(
+        THEME_STORAGE_KEY,
+        theme,
+      );
+    } catch {
+      // Theme application should not depend on persistent storage.
+    }
+  }, [theme]);
 
   useEffect(() => {
     document.title =
@@ -102,15 +152,38 @@ export function DemoPage() {
           </a>
         </nav>
 
-        <span
-          className={
-            online
-              ? "demo-engine is-online"
-              : "demo-engine is-offline"
-          }
-        >
-          [ ENGINE {online ? "ONLINE" : "OFFLINE"} ]
-        </span>
+        <div className="demo-controls">
+          <span
+            className={
+              online
+                ? "demo-engine is-online"
+                : "demo-engine is-offline"
+            }
+          >
+            [ ENGINE {online ? "ONLINE" : "OFFLINE"} ]
+          </span>
+
+          <button
+            className="theme-toggle demo-theme-toggle"
+            type="button"
+            aria-label={`Current theme is ${theme}. Switch to ${
+              theme === "light"
+                ? "dark"
+                : "light"
+            } mode`}
+            onClick={() =>
+              setTheme(
+                theme === "light"
+                  ? "dark"
+                  : "light",
+              )
+            }
+          >
+            {theme === "light"
+              ? "[ LIGHT → DARK ]"
+              : "[ DARK → LIGHT ]"}
+          </button>
+        </div>
       </header>
 
       <section className="demo-intro">
