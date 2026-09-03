@@ -60,6 +60,18 @@ def test_builtin_frame_benchmark_runs_end_to_end() -> None:
     assert payload["graph"]["analysis_id"] == payload["analysis_id"]
     assert payload["stream_events"][0]["row"] == 1
 
+    first_event = payload["stream_events"][0]
+    assert "risk_score" in first_event
+    assert "action" in first_event
+    assert "evidence_count" in first_event
+
+    flagged_events = [
+        event
+        for event in payload["stream_events"]
+        if event["action"] in {"REVIEW", "BLOCK"}
+    ]
+    assert flagged_events
+
 
 def test_custom_dataset_analysis_builds_graph_and_scores_rows() -> None:
     client = TestClient(app)
