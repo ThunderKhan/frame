@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from frame.analysis.catalog import DATASET_CATALOG as BASE_DATASET_CATALOG
 from frame.analysis.catalog_extra import EXTRA_DATASET_CATALOG
 from frame.analysis.service import AnalysisMapping, EntityColumn, analyze_csv
+from frame.api.runtime import build_risk_engine
 from frame.evaluation.worlds import build_hard_negative_world
 
 DATASET_CATALOG = BASE_DATASET_CATALOG + EXTRA_DATASET_CATALOG
@@ -81,8 +82,8 @@ def _mapping_from_payload(
     )
 
 
-def _frame_benchmark_csv() -> str:
-    world = build_hard_negative_world(
+def _frame_benchmark_world():
+    return build_hard_negative_world(
         legitimate_count=240,
         ring_count=3,
         ring_size=5,
@@ -90,6 +91,8 @@ def _frame_benchmark_csv() -> str:
         seed=2026,
     )
 
+
+def _frame_benchmark_csv(world: Any) -> str:
     stream = StringIO()
     writer = csv.writer(stream, lineterminator="\n")
     writer.writerow(
@@ -126,6 +129,34 @@ def _frame_benchmark_csv() -> str:
         )
 
     return stream.getvalue()
+
+
+def _attach_online_decisions(
+    result: dict[str, Any],
+    transactions: Any,
+) -> dict[str, Any]:
+    stream_events = result.get("stream_events")
+    if not isinstance(stream_events, list):
+        return result
+
+    risk_engine = build_risk_engine()
+    decisions: dict[str, dict[str, Any]] = {}
+
+    for transaction in transactions:
+        risk_result = risk_engine.score(transaction)
+        decisions[transaction.transaction_id] = {
+            "risk_score": float(risk_result.probability),
+            "action": str(risk_result.action),
+            "evidence_count": len(risk_result.evidence),
+        }
+
+    for event in stream_events:
+        transaction_id = event.get("transaction_id")
+        decision = decisions.get(transaction_id)
+        if decision is not None:
+            event.update(decision)
+
+    return result
 
 
 def _attach_stream_to_graph(result: dict[str, Any]) -> dict[str, Any]:
@@ -180,15 +211,19 @@ def analyze_builtin_dataset(
     )
 
     try:
-        return _attach_stream_to_graph(
-            analyze_csv(
-                dataset_id=dataset_id,
-                filename="frame-ring-benchmark.csv",
-                csv_text=_frame_benchmark_csv(),
-                mapping=mapping,
-                row_limit=5000,
-            )
+        world = _frame_benchmark_world()
+        result = analyze_csv(
+            dataset_id=dataset_id,
+            filename="frame-ring-benchmark.csv",
+            csv_text=_frame_benchmark_csv(world),
+            mapping=mapping,
+            row_limit=5000,
         )
+        result = _attach_online_decisions(
+            result,
+            world.transactions,
+        )
+        return _attach_stream_to_graph(result)
     except ValueError as exc:
         raise HTTPException(
             status_code=422,
