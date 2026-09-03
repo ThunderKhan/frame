@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: frame-api
+    runtime: python
+    autoDeploy: true
+    buildCommand: pip install -e . && python scripts/train_online_model_artifact.py
+    startCommand: uvicorn frame.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: FRAME_CORS_ORIGINS
+        sync: false
