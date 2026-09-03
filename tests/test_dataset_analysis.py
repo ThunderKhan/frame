@@ -13,7 +13,23 @@ def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
     assert response.status_code == 200
 
     payload = response.json()
-    assert payload["count"] >= 10
+    assert payload["count"] >= 13
+
+    dataset_ids = {
+        dataset["id"]
+        for dataset in payload["datasets"]
+    }
+
+    assert "frame-benchmark" in dataset_ids
+    assert "ibm-aml" in dataset_ids
+    assert "amlsim" in dataset_ids
+    assert "paysim" in dataset_ids
+    assert "banksim" in dataset_ids
+    assert "elliptic" in dataset_ids
+    assert "ieee-cis" in dataset_ids
+    assert "ulb-creditcard" in dataset_ids
+    assert "baf-neurips" in dataset_ids
+    assert "bitcoinheist" in dataset_ids
 
     supports = {
         dataset["support"]
@@ -23,6 +39,7 @@ def test_dataset_catalog_exposes_multiple_analysis_modes() -> None:
     assert "full_pipeline" in supports
     assert "adapter_ready" in supports
     assert "multi_file_graph" in supports
+    assert "multi_file_gated" in supports
     assert "transaction_only" in supports
 
 
