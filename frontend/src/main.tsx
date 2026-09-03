@@ -13,10 +13,6 @@ import {
 } from "./DatasetLab.tsx";
 
 import {
-  DatasetLabActions,
-} from "./DatasetLabActions.tsx";
-
-import {
   DemoPage,
 } from "./DemoPage.tsx";
 
@@ -60,7 +56,6 @@ createRoot(
       <>
         <DemoPage />
         <DatasetLab />
-        <DatasetLabActions />
         <InvestigationOverlay />
       </>
     ) : (
