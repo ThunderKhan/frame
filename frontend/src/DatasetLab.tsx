@@ -842,9 +842,35 @@ export function DatasetLab() {
             <div><span>POSITIVE LABELS</span><strong>{analysis.evaluation?.positive_labels ?? "N/A"}</strong></div>
           </div>
 
+          <div className="dataset-results-guide">
+            <div>
+              <span>RELATIONSHIP LAYER</span>
+              <strong>ISOLATION FOREST → ANOMALY PERCENTILE</strong>
+              <p>
+                Ranks rows by unusual graph-derived context within this run. A 99.2 percentile means the row ranks as more anomalous than about 99.2% of analyzed rows. It is not a fraud probability.
+              </p>
+            </div>
+            <div className={analysis.dataset_id === "frame-benchmark" ? "is-online" : ""}>
+              <span>ONLINE POLICY LAYER</span>
+              <strong>{analysis.dataset_id === "frame-benchmark" ? "FRAME-ONLINE-V1 → ALLOW / REVIEW / BLOCK" : "NOT APPLIED TO ARBITRARY DATASETS"}</strong>
+              <p>
+                {analysis.dataset_id === "frame-benchmark"
+                  ? "The native FRAME benchmark also runs through the calibrated online risk model. Its policy decisions and risk probabilities appear during transaction playback."
+                  : "FRAME does not pretend its native supervised payment model generalizes to unknown schemas. External and BYOD runs remain relationship-anomaly analyses unless they match the native online schema."}
+              </p>
+            </div>
+          </div>
+
           <div className="dataset-model-note">
             <strong>MODEL SCOPE ///</strong>
             <p>{analysis.model.purpose}</p>
+          </div>
+
+          <div className="dataset-metric-footnote">
+            <strong>HOW TO READ EVALUATION /// </strong>
+            {analysis.evaluation
+              ? "PR-AUC and ROC-AUC compare the relationship-anomaly ranking against labels supplied by the dataset. Labels are used for evaluation, not as inputs to the unsupervised Isolation Forest."
+              : "No usable labels were supplied for this run, so ranking quality cannot be scored against ground truth. The graph and anomaly percentile remain available for investigation."}
           </div>
 
           {analysis.graph.truncated && (
@@ -859,13 +885,18 @@ export function DatasetLab() {
 
           <div className="dataset-anomaly-table">
             <header>
-              <span>TOP RELATIONSHIP ANOMALIES</span>
-              <span>TOP {Math.min(analysis.top_anomalies.length, 20)}</span>
+              <span>TRANSACTION</span>
+              <span>ANOMALY PERCENTILE</span>
+              <span>LABEL</span>
+              <span>OBSERVED RELATIONSHIPS</span>
             </header>
             {analysis.top_anomalies.slice(0, 20).map((row) => (
               <div key={`${row.transaction_id}-${row.row}`}>
                 <span>{row.transaction_id}</span>
-                <strong>{(row.anomaly_score * 100).toFixed(1)}%</strong>
+                <strong>
+                  {(row.anomaly_score * 100).toFixed(1)}
+                  <small>PERCENTILE</small>
+                </strong>
                 <span>{row.label === null ? "UNLABELED" : `LABEL ${row.label}`}</span>
                 <span>{row.entities.slice(0, 3).join(" / ")}</span>
               </div>
