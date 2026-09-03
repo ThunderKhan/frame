@@ -91,7 +91,7 @@ def evaluate_split(
     ).ravel()
 
     return {
-        "rows": int(len(split.labels)),
+        "rows": len(split.labels),
         "fraud": int(split.labels.sum()),
         "fraud_rate": float(split.labels.mean()),
         "pr_auc": float(
