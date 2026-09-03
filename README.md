@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/frame-readme-hero-1280x640.png" alt="FRAME — Fraud Ring Analysis & Mapping Engine" width="100%" />
+<img src="assets/frame-readme-hero.png" alt="FRAME — Fraud Ring Analysis & Mapping Engine" width="100%" />
 
 **Explainable graph intelligence for coordinated payment abuse.**
 
@@ -197,7 +197,6 @@ RUN FRAME
       ↓
 Graph + anomaly ranking + optional label metrics
 ```
-
 ### Bring your own data
 
 For arbitrary relational CSVs:
@@ -398,7 +397,6 @@ Fraud outcomes:
 | Fraud allowed | 4 |
 | Fraud reviewed | 12 |
 | Fraud blocked | 80 |
-
 Equivalent rates:
 
 - **95.83%** planted fraud intercepted through `REVIEW` or `BLOCK`
