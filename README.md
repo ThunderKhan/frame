@@ -28,7 +28,8 @@
 <p align="center">
   <a href="#the-problem">Problem</a> •
   <a href="#architecture">Architecture</a> •
-  <a href="#synthetic-benchmark">Benchmark</a> •
+  <a href="#real-data-benchmark">Real Data</a> •
+  <a href="#synthetic-benchmark">Synthetic Benchmark</a> •
   <a href="#live-demo">Demo</a> •
   <a href="#api">API</a> •
   <a href="#running-frame">Run Locally</a>
@@ -38,10 +39,12 @@
 
 - Graph-aware fraud analysis across customers, cards, devices, IPs, and merchants
 - Online temporal features over a rolling 30-minute window
-- Calibrated machine-learning risk scoring
+- Calibrated machine-learning risk scoring for the live graph pipeline
 - Deterministic `ALLOW / REVIEW / BLOCK` decision policy
 - Observed network evidence for analyst investigation
 - Interactive live payment graph
+- Real-data fraud benchmark across Logistic Regression, LightGBM, XGBoost, and CatBoost
+- Chronological held-out evaluation on 284,807 anonymized card transactions
 - Synthetic hard-negative benchmark with planted coordinated fraud rings
 - FastAPI backend with React investigation interface
 
@@ -132,7 +135,7 @@ Shared infrastructure can make coordinated activity visible even when individual
 
 ## Online features
 
-The current model uses 13 online features.
+The current live model uses 13 online features.
 
 ### Transaction context
 
@@ -160,9 +163,9 @@ The production online feature schema intentionally does not use lifetime IP degr
 
 ---
 
-## Model
+## Live scoring model
 
-The current prototype uses:
+The current live graph pipeline uses:
 
 ```text
 StandardScaler
@@ -179,9 +182,65 @@ Configuration:
 - sigmoid probability calibration
 - 5-fold calibration
 
-FRAME currently does **not** use a GNN, neural network, or LLM for transaction scoring.
+FRAME currently does **not** use a GNN, neural network, or LLM for live transaction scoring.
 
-The goal of the current architecture is to establish a transparent, reproducible graph-and-temporal baseline before adding more complex models.
+The live model remains intentionally lightweight and transparent. More expressive boosted-tree models are evaluated separately on real anonymized transaction data rather than being silently substituted into the graph demo.
+
+---
+
+## Real-data benchmark
+
+FRAME is separately evaluated on the **ULB Credit Card Fraud** dataset containing **284,807 anonymized card transactions** and **492 labeled fraud cases**.
+
+To reduce temporal leakage, the data is stable-sorted by `Time` and split chronologically into **60% train / 20% validation / 20% test**. Decision thresholds are selected only on the validation split by maximizing F1, then frozen for held-out test evaluation.
+
+This real-data experiment evaluates **transaction-level fraud discrimination**. It does **not** validate FRAME's heterogeneous customer/device/IP graph-ring layer because those relationship identifiers are not present in the public dataset.
+
+### Held-out test results
+
+| Model | PR-AUC | ROC-AUC | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Logistic Regression | 0.7436 | **0.9820** | 0.9434 | 0.6667 | 0.7813 |
+| **LightGBM** | 0.7988 | 0.9811 | **0.9474** | 0.7200 | **0.8182** |
+| XGBoost | 0.7909 | 0.9775 | 0.8871 | **0.7333** | 0.8029 |
+| CatBoost | **0.8039** | 0.9694 | 0.8730 | **0.7333** | 0.7971 |
+
+### Operational interpretation
+
+- **CatBoost** achieved the highest held-out PR-AUC: **0.8039**.
+- **LightGBM** achieved the highest F1: **0.8182**, while preserving **94.74% precision** and **72% recall**.
+- On 56,962 held-out test transactions, LightGBM produced **3 false positives**, detected **54 of 75 fraud cases**, and missed 21.
+- XGBoost and CatBoost each detected 55 of 75 fraud cases, with 7 and 8 false positives respectively.
+
+The benchmark therefore does not claim one universally best model: CatBoost ranks fraud cases best by PR-AUC, while LightGBM provides the strongest F1/precision tradeoff at the selected operating point.
+
+### Calibration experiment
+
+FRAME also compares the balanced logistic baseline against 5-fold sigmoid calibration.
+
+Calibration dramatically improved probability quality on the held-out test set:
+
+| Model | Brier score ↓ | Log loss ↓ | PR-AUC | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Uncalibrated logistic | 0.02273 | 0.09809 | **0.7436** | **0.7813** |
+| Sigmoid calibrated | **0.00054** | **0.00302** | 0.7386 | 0.7541 |
+
+Because calibration slightly reduced held-out discrimination and F1, the real-data benchmark retains the uncalibrated logistic model as its linear baseline and treats its decision value as a **model score**, not a literal fraud probability.
+
+### Feature importance
+
+The three boosted-tree models independently rank anonymized feature `V14` as their most important feature. LightGBM also ranks `Amount` and `Time` among its top features.
+
+Because `V1`–`V28` are anonymized/PCA-derived variables, FRAME does not assign semantic meaning to those feature names.
+
+Reproducible reports are stored under:
+
+```text
+reports/real_data/
+├── ulb_metrics.json
+├── ulb_calibration_comparison.json
+└── ulb_boosting_benchmark.json
+```
 
 ---
 
@@ -213,7 +272,7 @@ FRAME does not claim that any single evidence item caused the model's score. The
 
 > **3 / 3 planted coordinated fraud rings produced graph-backed evidence.**
 
-All reported results are from a controlled synthetic benchmark and are not claims of production or real-world fraud-detection performance.
+All reported results in this section are from a controlled synthetic benchmark and are not claims of production or real-world graph-ring performance.
 
 ### Locked hard-negative test results
 
@@ -288,6 +347,8 @@ ANALYST HANDOFF
 The demo generates ordinary traffic first, followed by a coordinated synthetic ring in which multiple customers share device and IP infrastructure.
 
 The model and decision policy are not changed for the demo.
+
+Synthetic traffic is used for the live presentation so coordinated behavior can be reproduced reliably. Real-world model validation is reported separately in the real-data benchmark above.
 
 ---
 
@@ -396,6 +457,11 @@ The current prototype keeps online graph and temporal state in memory, so server
 - temporal-window features
 - logistic regression
 - probability calibration
+- LightGBM
+- XGBoost
+- CatBoost
+- chronological validation/test evaluation
+- PR-AUC-focused imbalanced classification analysis
 
 ---
 
@@ -405,6 +471,12 @@ The current prototype keeps online graph and temporal state in memory, so server
 
 ```powershell
 pip install -e .
+```
+
+For the optional real-data boosted-tree benchmark:
+
+```powershell
+pip install -e ".[real-ml]"
 ```
 
 ### 2. Train the online model artifact
@@ -450,6 +522,24 @@ python scripts\stream_demo_transactions.py
 
 For a clean demonstration, restart the backend before streaming the scenario.
 
+### 6. Reproduce the real-data benchmark
+
+Download the ULB Credit Card Fraud dataset locally so `creditcard.csv` is located at:
+
+```text
+data/real/creditcard.csv
+```
+
+Then run:
+
+```powershell
+python scripts\train_real_fraud_model.py
+python scripts\compare_real_fraud_calibration.py
+python scripts\benchmark_real_fraud_boosting.py
+```
+
+The raw dataset and trained `.pkl` artifacts are intentionally excluded from Git.
+
 ---
 
 ## Current scope
@@ -463,12 +553,13 @@ It is designed to explore:
 - online temporal risk features
 - explainable analyst workflows
 - deterministic risk-policy integration
+- real-world transaction-level fraud benchmarking
 
 It is **not** presented as a production-ready fraud engine.
 
 Future work may include:
 
-- evaluation on public or anonymized real-world datasets
+- real datasets that retain customer/device/IP relationship identifiers
 - richer graph-learning baselines
 - persistent graph/state storage
 - adaptive temporal windows
