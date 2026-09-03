@@ -7,12 +7,12 @@
 }
 
 .project-link {
-  min-height: 46px;
+  min-height: 48px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 10px;
 
   padding: 14px 18px;
 
@@ -36,14 +36,16 @@
   text-transform: uppercase;
 
   transition:
-    color 100ms linear,
-    background-color 100ms linear,
-    border-color 100ms linear;
+    color 120ms linear,
+    background-color 120ms linear,
+    border-color 120ms linear,
+    transform 120ms ease;
 }
 
 .project-link:hover {
   color: var(--paper);
   background: var(--ink);
+  transform: translateY(-1px);
 }
 
 .project-link-primary {
@@ -58,15 +60,15 @@
 }
 
 .project-link-icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   flex: 0 0 auto;
 }
 
 .project-link:focus-visible,
 .colophon-links a:focus-visible {
   outline: 2px solid var(--red);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 .colophon {
