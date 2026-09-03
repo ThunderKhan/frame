@@ -260,7 +260,7 @@ function ImmediatePaymentGraph({ graph }: PaymentGraphProps) {
           if (shared && (sharedInfrastructure.size <= 10 || globalScale > 2.5)) {
             const label = type === "device" ? "SHARED DEVICE" : "SHARED IP";
             const fontSize = Math.max(3.1, 10 / globalScale);
-            context.font = `800 ${fontSize}px \"JetBrains Mono\", Consolas, monospace`;
+            context.font = `800 ${fontSize}px "JetBrains Mono", Consolas, monospace`;
             context.textAlign = "left";
             context.textBaseline = "middle";
             context.fillStyle = red;
