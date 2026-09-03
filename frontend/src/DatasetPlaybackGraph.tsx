@@ -28,7 +28,6 @@ export interface DatasetStreamEvent {
 interface DatasetPlaybackGraphProps {
   graph: GraphSnapshot;
   events: DatasetStreamEvent[];
-  analysisId: string;
 }
 
 interface RenderNode extends GraphNode {
@@ -153,7 +152,6 @@ function nodeRadius(nodeType: string, shared: boolean) {
 export function DatasetPlaybackGraph({
   graph,
   events,
-  analysisId,
 }: DatasetPlaybackGraphProps) {
   const graphRef = useRef<ForceGraphMethods | undefined>(undefined);
   const [visibleEventCount, setVisibleEventCount] = useState(0);
@@ -165,27 +163,22 @@ export function DatasetPlaybackGraph({
     : 80;
 
   useEffect(() => {
-    setVisibleEventCount(0);
-    setPlaying(true);
-  }, [analysisId]);
-
-  useEffect(() => {
     if (!playing || visibleEventCount >= totalEvents || totalEvents === 0) {
       return;
     }
 
     const timer = window.setTimeout(() => {
-      setVisibleEventCount((current) => Math.min(current + 1, totalEvents));
+      setVisibleEventCount((current) => {
+        const next = Math.min(current + 1, totalEvents);
+        if (next >= totalEvents) {
+          setPlaying(false);
+        }
+        return next;
+      });
     }, tickMs);
 
     return () => window.clearTimeout(timer);
   }, [playing, tickMs, totalEvents, visibleEventCount]);
-
-  useEffect(() => {
-    if (visibleEventCount >= totalEvents && totalEvents > 0) {
-      setPlaying(false);
-    }
-  }, [totalEvents, visibleEventCount]);
 
   const visibleGraph = useMemo(
     () => buildVisibleGraph(graph, events, visibleEventCount),
@@ -223,6 +216,14 @@ export function DatasetPlaybackGraph({
     setPlaying(true);
   }
 
+  function togglePlayback() {
+    if (visibleEventCount >= totalEvents) {
+      restart();
+      return;
+    }
+    setPlaying((value) => !value);
+  }
+
   function showFinal() {
     setVisibleEventCount(totalEvents);
     setPlaying(false);
@@ -244,7 +245,7 @@ export function DatasetPlaybackGraph({
           <span>{sharedInfrastructure.size} SHARED INFRA</span>
         </div>
         <div className="dataset-playback-controls">
-          <button type="button" onClick={() => setPlaying((value) => !value)}>
+          <button type="button" onClick={togglePlayback}>
             {playing ? "PAUSE" : visibleEventCount >= totalEvents ? "PLAY AGAIN" : "RESUME"}
           </button>
           <button type="button" onClick={restart}>RESTART</button>
@@ -306,10 +307,10 @@ export function DatasetPlaybackGraph({
             linkDirectionalParticleColor={() => red}
             nodeCanvasObject={(rawNode, context, globalScale) => {
               const node = rawNode as RenderNode;
-              const nodeType = String(node.attributes.node_type ?? "entity");
+              const type = String(node.attributes.node_type ?? "entity");
               const isShared = sharedInfrastructure.has(node.id);
               const isContext = suspiciousNeighbors.has(node.id);
-              const radius = nodeRadius(nodeType, isShared);
+              const radius = nodeRadius(type, isShared);
               const x = node.x ?? 0;
               const y = node.y ?? 0;
 
@@ -331,7 +332,7 @@ export function DatasetPlaybackGraph({
               }
 
               if (isShared && (sharedInfrastructure.size <= 10 || globalScale > 2.4)) {
-                const label = nodeType === "device" ? "SHARED DEVICE" : "SHARED IP";
+                const label = type === "device" ? "SHARED DEVICE" : "SHARED IP";
                 const fontSize = Math.max(3.2, 10 / globalScale);
                 context.font = `800 ${fontSize}px \"JetBrains Mono\", Consolas, monospace`;
                 context.textAlign = "left";
@@ -349,12 +350,12 @@ export function DatasetPlaybackGraph({
             }}
             nodeLabel={(rawNode) => {
               const node = rawNode as RenderNode;
-              const nodeType = String(node.attributes.node_type ?? "entity");
+              const type = String(node.attributes.node_type ?? "entity");
               const entityId = String(node.attributes.entity_id ?? node.id);
               const status = sharedInfrastructure.has(node.id)
                 ? "SHARED ACROSS MULTIPLE CUSTOMERS"
                 : "OBSERVED ENTITY";
-              return `${entityId}\nTYPE: ${nodeType}\n${status}`;
+              return `${entityId}\nTYPE: ${type}\n${status}`;
             }}
           />
         )}
