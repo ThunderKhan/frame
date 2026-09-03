@@ -1,0 +1,4 @@
+html.frame-landing .network-section,
+html.frame-landing .operations-grid {
+  display: none !important;
+}
