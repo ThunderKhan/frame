@@ -25,6 +25,11 @@ dev = [
     "ruff>=0.6",
     "httpx>=0.28",
 ]
+real-ml = [
+    "lightgbm>=4.5",
+    "xgboost>=3.0",
+    "catboost>=1.2",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
